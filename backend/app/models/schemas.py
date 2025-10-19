@@ -1,0 +1,292 @@
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime
+from enum import Enum
+
+class DashboardType(str, Enum):
+    RESEARCH = "research"
+    PROJECT = "project"
+    ANALYTICS = "analytics"
+    PERFORMANCE = "performance"
+
+class TableType(str, Enum):
+    RESEARCH_DATA = "research_data"
+    PROJECT_DATA = "project_data"
+    TEAM_DATA = "team_data"
+    RESOURCE_DATA = "resource_data"
+
+class ShiftStatus(str, Enum):
+    PLANNED = "planned"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class CrewRole(str, Enum):
+    LEAD = "lead"
+    RESEARCHER = "researcher"
+    ANALYST = "analyst"
+    TECHNICIAN = "technician"
+    MANAGER = "manager"
+
+class ScenarioStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+class DashboardBase(BaseModel):
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    dashboard_type: DashboardType = Field(...)
+    is_public: bool = Field(False)
+
+class DashboardCreate(DashboardBase):
+    pass
+
+class DashboardUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    dashboard_type: Optional[DashboardType] = None
+    is_public: Optional[bool] = None
+
+class Dashboard(DashboardBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
+class TableBase(BaseModel):
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    table_type: TableType = Field(...)
+    columns: List[str] = Field(...)
+
+class TableCreate(TableBase):
+    pass
+
+class TableUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    table_type: Optional[TableType] = None
+    columns: Optional[List[str]] = None
+
+class Table(TableBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
+class LegacyShiftBase(BaseModel):
+    name: str = Field(...)
+    start_time: datetime = Field(...)
+    end_time: datetime = Field(...)
+    status: ShiftStatus = Field(ShiftStatus.PLANNED)
+    description: Optional[str] = Field(None)
+
+class LegacyShiftCreate(LegacyShiftBase):
+    crew_id: int = Field(...)
+
+class LegacyShiftUpdate(BaseModel):
+    name: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    status: Optional[ShiftStatus] = None
+    description: Optional[str] = None
+    crew_id: Optional[int] = None
+
+class LegacyShift(LegacyShiftBase):
+    id: int
+    crew_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class CrewBase(BaseModel):
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    max_members: int = Field(10)
+
+class CrewCreate(CrewBase):
+    pass
+
+class CrewUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    max_members: Optional[int] = None
+
+class CrewMemberBase(BaseModel):
+    user_id: int = Field(...)
+    role: CrewRole = Field(...)
+
+class CrewMemberCreate(CrewMemberBase):
+    crew_id: int = Field(...)
+
+class CrewMember(CrewMemberBase):
+    id: int
+    crew_id: int
+    joined_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class Crew(CrewBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    owner_id: int
+    members: List[CrewMember] = []
+
+    class Config:
+        from_attributes = True
+
+class TgScenarioBase(BaseModel):
+    name: str = Field(...)
+    description: Optional[str] = Field(None)
+    trigger_keywords: List[str] = Field(...)
+    message_template: str = Field(...)
+    status: ScenarioStatus = Field(ScenarioStatus.DRAFT)
+
+class TgScenarioCreate(TgScenarioBase):
+    pass
+
+class TgScenarioUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    trigger_keywords: Optional[List[str]] = None
+    message_template: Optional[str] = None
+    status: Optional[ScenarioStatus] = None
+
+class TgScenario(TgScenarioBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    owner_id: int
+
+    class Config:
+        from_attributes = True
+
+class EmployeeBase(BaseModel):
+    firstname: str = Field(...)
+    lastname: str = Field(...)
+    patronymic: Optional[str] = Field(None)
+    tg: Optional[str] = Field(None)
+    staff: Optional[str] = Field(None)
+    body: Optional[str] = Field(None)
+    drive: bool = Field(False)
+    parking: bool = Field(False)
+    telemedicine: bool = Field(False)
+    attorney: bool = Field(False)
+    acces_to_auto_vc: bool = Field(False)
+    crew: Optional[int] = Field(None)
+
+class EmployeeCreate(EmployeeBase):
+    pass
+
+class EmployeeUpdate(BaseModel):
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
+    patronymic: Optional[str] = None
+    tg: Optional[str] = None
+    staff: Optional[str] = None
+    body: Optional[str] = None
+    drive: Optional[bool] = None
+    parking: Optional[bool] = None
+    telemedicine: Optional[bool] = None
+    attorney: Optional[bool] = None
+    acces_to_auto_vc: Optional[bool] = None
+    crew: Optional[int] = None
+
+class Employee(EmployeeBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TransportBase(BaseModel):
+    name: str = Field(...)
+    model: Optional[str] = Field(None)
+    gov_number: Optional[str] = Field(None)
+    carsharing: bool = Field(False)
+    corporate: bool = Field(False)
+    auto_vc: bool = Field(False)
+
+class TransportCreate(TransportBase):
+    pass
+
+class TransportUpdate(BaseModel):
+    name: Optional[str] = None
+    model: Optional[str] = None
+    gov_number: Optional[str] = None
+    carsharing: Optional[bool] = None
+    corporate: Optional[bool] = None
+    auto_vc: Optional[bool] = None
+
+class Transport(TransportBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class RobotsBase(BaseModel):
+    name: int = Field(...)
+    series: int = Field(...)
+    has_blockers: bool = Field(False)
+
+class RobotsCreate(RobotsBase):
+    pass
+
+class RobotsUpdate(BaseModel):
+    name: Optional[int] = None
+    series: Optional[int] = None
+    has_blockers: Optional[bool] = None
+
+class Robots(RobotsBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ShiftBase(BaseModel):
+    executor: str = Field(...)
+    robot: int = Field(...)
+    transport_name: Optional[str] = Field(None)
+    time_start: datetime = Field(...)
+    time_end: datetime = Field(...)
+    route: bool = Field(False)
+    carpet: bool = Field(False)
+    geojson: Optional[Dict[str, Any]] = Field(None)
+
+class ShiftCreate(ShiftBase):
+    pass
+
+class ShiftUpdate(BaseModel):
+    executor: Optional[str] = None
+    robot: Optional[int] = None
+    transport_name: Optional[str] = None
+    time_start: Optional[datetime] = None
+    time_end: Optional[datetime] = None
+    route: Optional[bool] = None
+    carpet: Optional[bool] = None
+    geojson: Optional[Dict[str, Any]] = None
+
+class Shift(ShiftBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

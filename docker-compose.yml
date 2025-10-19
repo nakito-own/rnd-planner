@@ -1,0 +1,55 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rnd-planner-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: rnd_planner
+      MYSQL_USER: rnd_user
+      MYSQL_PASSWORD: rnd_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - rnd-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      timeout: 20s
+      retries: 10
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: rnd-planner-backend
+    ports:
+      - "8080:80"    # Nginx для веб-приложения
+      - "8000:8000"  # FastAPI для разработки
+    environment:
+      - DATABASE_URL=mysql+pymysql://root:password@mysql:3306/rnd_planner
+      - SECRET_KEY=your-secret-key-for-development
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - API_V1_STR=/api/v1
+      - PROJECT_NAME=R&D Planner API
+      - ENVIRONMENT=development
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - rnd-network
+    volumes:
+      - ./backend:/app
+      - ./frontend/build/web:/var/www/html:ro  # Монтируем Flutter build
+      - /app/__pycache__
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  rnd-network:
+    driver: bridge
