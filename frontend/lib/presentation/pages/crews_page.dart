@@ -5,6 +5,7 @@ import '../../core/services/api_service.dart';
 import '../../data/models/employee_model.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/employee_form.dart';
+import '../widgets/side_sheet.dart';
 
 class CrewsPage extends StatefulWidget {
   const CrewsPage({super.key});
@@ -137,12 +138,14 @@ class _CrewsPageState extends State<CrewsPage> {
   }
 
   void _openEmployeeForm({Employee? employee}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EmployeeForm(
-          employee: employee,
-          onSaved: _loadEmployees,
-        ),
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      barrierColor: Colors.black54,
+      child: EmployeeForm(
+        employee: employee,
+        onSaved: _loadEmployees,
+        showAppBar: false,
       ),
     );
   }

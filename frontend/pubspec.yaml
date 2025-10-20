@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  modal_side_sheet: ^0.0.1
   
   equatable: ^2.0.5
   dartz: ^0.10.1

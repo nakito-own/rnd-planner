@@ -7,11 +7,13 @@ import '../../data/models/employee_model.dart';
 class EmployeeForm extends StatefulWidget {
   final Employee? employee; // null для создания нового, не null для редактирования
   final VoidCallback? onSaved;
+  final bool showAppBar;
 
   const EmployeeForm({
     super.key,
     this.employee,
     this.onSaved,
+    this.showAppBar = true,
   });
 
   @override
@@ -114,9 +116,10 @@ class _EmployeeFormState extends State<EmployeeForm> {
       }
 
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text(
               widget.employee != null 
@@ -179,9 +182,10 @@ class _EmployeeFormState extends State<EmployeeForm> {
       await ApiService.deleteEmployee(widget.employee!.id);
       
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Employee successfully deleted'),
             backgroundColor: Colors.green,
@@ -211,21 +215,14 @@ class _EmployeeFormState extends State<EmployeeForm> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: Text(
           widget.employee != null ? 'Edit employee' : 'New employee',
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: widget.employee != null ? [
-          IconButton(
-            icon: const Icon(CupertinoIcons.delete, color: Colors.red),
-            onPressed: _isLoading ? null : _deleteEmployee,
-            tooltip: 'Delete employee',
-          ),
-        ] : null,
-      ),
+      ) : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -309,7 +306,6 @@ class _EmployeeFormState extends State<EmployeeForm> {
                       });
                     }),
                     const SizedBox(height: 32),
-                    
                     Row(
                       children: [
                         Expanded(
@@ -327,18 +323,34 @@ class _EmployeeFormState extends State<EmployeeForm> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                        if (widget.employee != null)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _deleteEmployee,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                                foregroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(fontSize: 16),
+                          )
+                        else
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ],

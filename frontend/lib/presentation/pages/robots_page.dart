@@ -5,6 +5,7 @@ import '../../core/services/api_service.dart';
 import '../../data/models/robot_model.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/robot_form.dart';
+import '../widgets/side_sheet.dart';
 
 class RobotsPage extends StatefulWidget {
   const RobotsPage({super.key});
@@ -104,12 +105,14 @@ class _RobotsPageState extends State<RobotsPage> {
   }
 
   void _openRobotForm({Robot? robot}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => RobotForm(
-          robot: robot,
-          onSaved: _loadRobots,
-        ),
+    showAppSideSheet(
+      context: context,
+      width: 420,
+      barrierColor: Colors.black54,
+      child: RobotForm(
+        robot: robot,
+        onSaved: _loadRobots,
+        showAppBar: false,
       ),
     );
   }
@@ -361,29 +364,23 @@ class _RobotsPageState extends State<RobotsPage> {
             Row(
               children: [
                 ClipOval(
-                  child: ColorFiltered(
-                    colorFilter: ColorFilter.mode(
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                      BlendMode.srcIn,
-                    ),
-                    child: Image.asset(
-                      'assets/images/robot_avatar.png',
-                      width: 40,
-                      height: 40,
-                      errorBuilder: (context, error, stackTrace) {
-                        // Fallback to CircleAvatar with text if image is missing
-                        return CircleAvatar(
-                          backgroundColor: Colors.blue,
-                          child: Text(
-                            robot.name.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  child: Image.asset(
+                    'assets/images/robot_avatar.png',
+                    width: 40,
+                    height: 40,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Fallback to CircleAvatar with text if image is missing
+                      return CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(
+                          robot.name.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
                           ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),

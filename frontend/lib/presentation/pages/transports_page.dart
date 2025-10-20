@@ -5,6 +5,7 @@ import '../../core/services/api_service.dart';
 import '../../data/models/transport_model.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/transport_form.dart';
+import '../widgets/side_sheet.dart';
 
 class TransportsPage extends StatefulWidget {
   const TransportsPage({super.key});
@@ -112,12 +113,14 @@ class _TransportsPageState extends State<TransportsPage> {
   }
 
   void _openTransportForm({Transport? transport}) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => TransportForm(
-          transport: transport,
-          onSaved: _loadTransports,
-        ),
+    showAppSideSheet(
+      context: context,
+      width: 480,
+      barrierColor: Colors.black54,
+      child: TransportForm(
+        transport: transport,
+        onSaved: _loadTransports,
+        showAppBar: false,
       ),
     );
   }

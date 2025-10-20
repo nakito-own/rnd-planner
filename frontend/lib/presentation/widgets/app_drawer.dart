@@ -137,7 +137,7 @@ class AppDrawer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: surfaceVariant,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         elevation: 1,
         child: InkWell(

@@ -7,11 +7,13 @@ import '../../data/models/transport_model.dart';
 class TransportForm extends StatefulWidget {
   final Transport? transport; // null для создания нового, не null для редактирования
   final VoidCallback? onSaved;
+  final bool showAppBar;
 
   const TransportForm({
     super.key,
     this.transport,
     this.onSaved,
+    this.showAppBar = true,
   });
 
   @override
@@ -89,9 +91,10 @@ class _TransportFormState extends State<TransportForm> {
       }
 
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text(
               widget.transport != null 
@@ -154,9 +157,10 @@ class _TransportFormState extends State<TransportForm> {
       await ApiService.deleteTransport(widget.transport!.id);
       
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Transport successfully deleted'),
             backgroundColor: Colors.green,
@@ -186,21 +190,14 @@ class _TransportFormState extends State<TransportForm> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: Text(
           widget.transport != null ? 'Edit transport' : 'New transport',
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: widget.transport != null ? [
-          IconButton(
-            icon: const Icon(CupertinoIcons.delete, color: Colors.red),
-            onPressed: _isLoading ? null : _deleteTransport,
-            tooltip: 'Delete transport',
-          ),
-        ] : null,
-      ),
+      ) : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -253,7 +250,6 @@ class _TransportFormState extends State<TransportForm> {
                       });
                     }),
                     const SizedBox(height: 32),
-                    
                     Row(
                       children: [
                         Expanded(
@@ -271,18 +267,34 @@ class _TransportFormState extends State<TransportForm> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                        if (widget.transport != null)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _deleteTransport,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                                foregroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(fontSize: 16),
+                          )
+                        else
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ],

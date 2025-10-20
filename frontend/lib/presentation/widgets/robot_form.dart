@@ -7,11 +7,13 @@ import '../../data/models/robot_model.dart';
 class RobotForm extends StatefulWidget {
   final Robot? robot; // null для создания нового, не null для редактирования
   final VoidCallback? onSaved;
+  final bool showAppBar;
 
   const RobotForm({
     super.key,
     this.robot,
     this.onSaved,
+    this.showAppBar = true,
   });
 
   @override
@@ -71,9 +73,10 @@ class _RobotFormState extends State<RobotForm> {
       }
 
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           SnackBar(
             content: Text(
               widget.robot != null 
@@ -136,9 +139,10 @@ class _RobotFormState extends State<RobotForm> {
       await ApiService.deleteRobot(widget.robot!.id);
       
       if (mounted) {
+        final messenger = ScaffoldMessenger.of(context);
         Navigator.of(context).pop();
         widget.onSaved?.call();
-        ScaffoldMessenger.of(context).showSnackBar(
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Robot successfully deleted'),
             backgroundColor: Colors.green,
@@ -168,21 +172,14 @@ class _RobotFormState extends State<RobotForm> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Scaffold(
-      appBar: AppBar(
+      appBar: widget.showAppBar ? AppBar(
         title: Text(
           widget.robot != null ? 'Edit robot' : 'New robot',
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: widget.robot != null ? [
-          IconButton(
-            icon: const Icon(CupertinoIcons.delete, color: Colors.red),
-            onPressed: _isLoading ? null : _deleteRobot,
-            tooltip: 'Delete robot',
-          ),
-        ] : null,
-      ),
+      ) : null,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -230,7 +227,6 @@ class _RobotFormState extends State<RobotForm> {
                       });
                     }),
                     const SizedBox(height: 32),
-                    
                     Row(
                       children: [
                         Expanded(
@@ -248,18 +244,34 @@ class _RobotFormState extends State<RobotForm> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                        if (widget.robot != null)
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : _deleteRobot,
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                                foregroundColor: Colors.red,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Delete',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
-                            child: const Text(
-                              'Cancel',
-                              style: TextStyle(fontSize: 16),
+                          )
+                        else
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(fontSize: 16),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ],
