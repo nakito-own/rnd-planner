@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import '../../data/models/employee_model.dart';
 import '../../data/models/robot_model.dart';
 import '../../data/models/transport_model.dart';
+import '../../data/models/shift_model.dart';
+import '../../data/models/task_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000/api/v1';
+  static const String baseUrl = 'http://192.168.3.3:8000/api/v1';
   
   static Future<List<Employee>> getEmployees({
     int skip = 0,
@@ -428,5 +430,101 @@ class ApiService {
       throw Exception('Error deleting transport: $e');
     }
   }
+
+  // Shifts API methods
+  static Future<bool> testConnection() async {
+    try {
+      print('Testing connection to: $baseUrl/shifts/test');
+      
+      // Сначала пробуем тестовую ручку
+      final testResponse = await http.get(
+        Uri.parse('$baseUrl/shifts/test'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 5));
+      
+      print('Test response status: ${testResponse.statusCode}');
+      print('Test response body: ${testResponse.body}');
+      print('Test response headers: ${testResponse.headers}');
+      
+      if (testResponse.statusCode == 200) {
+        print('Test endpoint works: ${testResponse.body}');
+        return true;
+      }
+      
+      // Если тестовая ручка не работает, пробуем корневую
+      print('Trying root endpoint: $baseUrl/');
+      final response = await http.get(
+        Uri.parse('$baseUrl/'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 5));
+      
+      print('Root response status: ${response.statusCode}');
+      print('Root response body: ${response.body}');
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Connection test failed: $e');
+      print('Error type: ${e.runtimeType}');
+      return false;
+    }
+  }
+
+  static Future<Shift?> getShiftByDate(DateTime date) async {
+    try {
+      // FastAPI ожидает полный datetime формат с разделителем T
+      // Создаем datetime с временем 00:00:00
+      final dateTime = DateTime(date.year, date.month, date.day);
+      final dateStr = dateTime.toIso8601String(); // Полный ISO формат
+      
+      final url = '$baseUrl/shifts/date/$dateStr';
+      print('Making request to: $url'); // Debug log
+      print('Date string: $dateStr');
+      print('Base URL: $baseUrl');
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 10)); // Добавляем таймаут
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      print('Response headers: ${response.headers}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = jsonDecode(response.body);
+        print('Parsed JSON list length: ${jsonList.length}');
+        if (jsonList.isEmpty) {
+          print('No shifts found for date: $dateStr');
+          // Если смены на эту дату нет, возвращаем null
+          return null;
+        } else {
+          print('Found ${jsonList.length} shifts, returning first one');
+          // Возвращаем первую смену из списка
+          return Shift.fromJson(jsonList.first);
+        }
+      } else {
+        final errorBody = response.body;
+        print('Error response: $errorBody');
+        throw Exception('Failed to load shift: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Error details: $e'); // Debug log
+      print('Error type: ${e.runtimeType}');
+      if (e.toString().contains('Failed to fetch')) {
+        throw Exception('Не удается подключиться к серверу. Проверьте, что бекенд запущен на $baseUrl');
+      } else if (e.toString().contains('TimeoutException')) {
+        throw Exception('Превышено время ожидания ответа от сервера');
+      } else {
+        throw Exception('Ошибка загрузки смены: $e');
+      }
+    }
+  }
+
 
 }

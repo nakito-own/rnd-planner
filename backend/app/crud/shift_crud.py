@@ -1,5 +1,5 @@
-from sqlalchemy.orm import Session
-from app.models.database_models import Shift
+from sqlalchemy.orm import Session, joinedload
+from app.models.database_models import Shift, Task, Employee, Transport
 from app.models.schemas import ShiftCreate, ShiftUpdate
 from typing import List, Optional
 from datetime import datetime
@@ -7,22 +7,80 @@ from datetime import datetime
 def get_shift(db: Session, shift_id: int) -> Optional[Shift]:
     return db.query(Shift).filter(Shift.id == shift_id).first()
 
+def get_shift_with_tasks(db: Session, shift_id: int) -> Optional[Shift]:
+    """Получить смену с задачами и связанными данными"""
+    return db.query(Shift).options(
+        joinedload(Shift.tasks).joinedload(Task.executor_rel),
+        joinedload(Shift.tasks).joinedload(Task.transport_rel)
+    ).filter(Shift.id == shift_id).first()
+
+def enrich_task_data(task: Task) -> dict:
+    """Обогатить данные задачи дополнительной информацией"""
+    task_data = {
+        'id': task.id,
+        'executor': task.executor,
+        'robot_name': task.robot_name,
+        'transport_id': task.transport_id,
+        'time_start': task.time_start,
+        'time_end': task.time_end,
+        'type': task.type,
+        'geojson': task.geojson,
+        'tickets': task.tickets,
+        'created_at': task.created_at,
+        'updated_at': task.updated_at,
+        'executor_name': None,
+        'transport_name': None,
+        'transport_gov_number': None
+    }
+    
+    # Добавляем ФИО исполнителя
+    if task.executor_rel:
+        executor = task.executor_rel
+        executor_name_parts = [executor.firstname, executor.lastname]
+        if executor.patronymic:
+            executor_name_parts.append(executor.patronymic)
+        task_data['executor_name'] = ' '.join(executor_name_parts)
+    
+    # Добавляем информацию о транспорте
+    if task.transport_rel:
+        transport = task.transport_rel
+        task_data['transport_name'] = transport.name
+        task_data['transport_gov_number'] = transport.gov_number
+    
+    return task_data
+
 def get_shifts(db: Session, skip: int = 0, limit: int = 100) -> List[Shift]:
     return db.query(Shift).offset(skip).limit(limit).all()
 
-def get_shifts_by_robot(db: Session, robot_id: int) -> List[Shift]:
-    return db.query(Shift).filter(Shift.robot == robot_id).all()
-
-def get_shifts_by_executor(db: Session, executor: str) -> List[Shift]:
-    return db.query(Shift).filter(Shift.executor == executor).all()
+def get_shifts_by_date(db: Session, date: datetime) -> List[Shift]:
+    """Получить смены по конкретной дате"""
+    try:
+        # Создаем начало и конец дня для поиска
+        start_of_day = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = date.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        print(f"Searching shifts between {start_of_day} and {end_of_day}")
+        
+        shifts = db.query(Shift).filter(
+            Shift.date >= start_of_day,
+            Shift.date <= end_of_day
+        ).all()
+        
+        print(f"Found {len(shifts)} shifts")
+        return shifts
+    except Exception as e:
+        print(f"Error in get_shifts_by_date CRUD: {e}")
+        raise
 
 def get_shifts_by_date_range(db: Session, start_date: datetime, end_date: datetime) -> List[Shift]:
+    """Получить смены в диапазоне дат"""
     return db.query(Shift).filter(
-        Shift.time_start >= start_date,
-        Shift.time_end <= end_date
+        Shift.date >= start_date,
+        Shift.date <= end_date
     ).all()
 
 def get_active_shifts(db: Session, current_time: datetime = None) -> List[Shift]:
+    """Получить активные смены (текущее время между time_start и time_end)"""
     if current_time is None:
         current_time = datetime.now()
     return db.query(Shift).filter(

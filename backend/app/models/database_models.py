@@ -62,21 +62,15 @@ class Shift(Base):
     __tablename__ = "shifts"
     
     id = Column(Integer, primary_key=True, index=True)
-    executor = Column(String(200), nullable=False)
-    robot = Column(Integer, ForeignKey("robots.id"), nullable=False)
-    transport_name = Column(String(200), nullable=True)
+    date = Column(DateTime(timezone=True), nullable=False)
     time_start = Column(DateTime(timezone=True), nullable=False)
     time_end = Column(DateTime(timezone=True), nullable=False)
-    route = Column(Boolean, default=False)
-    carpet = Column(Boolean, default=False)
-    geojson = Column(JSON, nullable=True)
+    edited_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
-    robot_rel = relationship("Robots", back_populates="shifts")
-
-Robots.shifts = relationship("Shift", back_populates="robot_rel")
+    tasks = relationship("Task", back_populates="shift_rel")
 
 class Crew(Base):
     __tablename__ = "crews"
@@ -115,6 +109,5 @@ class Task(Base):
     transport_rel = relationship("Transport", back_populates="tasks")
 
 # Add back_populates to existing models
-Shift.tasks = relationship("Task", back_populates="shift_rel")
 Employee.tasks = relationship("Task", back_populates="executor_rel")
 Transport.tasks = relationship("Task", back_populates="transport_rel")

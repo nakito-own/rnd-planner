@@ -269,32 +269,82 @@ class Robots(RobotsBase):
         from_attributes = True
 
 class ShiftBase(BaseModel):
-    executor: str = Field(...)
-    robot: int = Field(...)
-    transport_name: Optional[str] = Field(None)
-    time_start: datetime = Field(...)
-    time_end: datetime = Field(...)
-    route: bool = Field(False)
-    carpet: bool = Field(False)
-    geojson: Optional[Dict[str, Any]] = Field(None)
+    date: datetime = Field(..., description="Дата смены")
+    time_start: datetime = Field(..., description="Время начала смены")
+    time_end: datetime = Field(..., description="Время окончания смены")
 
 class ShiftCreate(ShiftBase):
     pass
 
 class ShiftUpdate(BaseModel):
-    executor: Optional[str] = None
-    robot: Optional[int] = None
-    transport_name: Optional[str] = None
+    date: Optional[datetime] = None
     time_start: Optional[datetime] = None
     time_end: Optional[datetime] = None
-    route: Optional[bool] = None
-    carpet: Optional[bool] = None
-    geojson: Optional[Dict[str, Any]] = None
 
 class Shift(ShiftBase):
     id: int
+    edited_at: datetime
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TaskForShift(BaseModel):
+    id: int
+    executor: int
+    robot_name: int
+    transport_id: Optional[int] = None
+    time_start: datetime
+    time_end: datetime
+    type: TaskType
+    geojson: Optional[Dict[str, Any]] = None
+    tickets: List[str]
+    created_at: datetime
+    updated_at: datetime
+    # Дополнительная информация
+    executor_name: Optional[str] = None  # ФИО исполнителя
+    transport_name: Optional[str] = None  # Название транспорта
+    transport_gov_number: Optional[str] = None  # Гос номер транспорта
+
+    class Config:
+        from_attributes = True
+
+class ShiftWithTasks(ShiftBase):
+    id: int
+    edited_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    tasks: List[TaskForShift] = []
+
+    class Config:
+        from_attributes = True
+
+class EnrichedTaskForShift(BaseModel):
+    id: int
+    executor: int
+    robot_name: int
+    transport_id: Optional[int] = None
+    time_start: datetime
+    time_end: datetime
+    type: TaskType
+    geojson: Optional[Dict[str, Any]] = None
+    tickets: List[str]
+    created_at: datetime
+    updated_at: datetime
+    executor_name: Optional[str] = None
+    transport_name: Optional[str] = None
+    transport_gov_number: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class ShiftWithEnrichedTasks(ShiftBase):
+    id: int
+    edited_at: datetime
+    created_at: datetime
+    updated_at: datetime
+    tasks: List[EnrichedTaskForShift] = []
 
     class Config:
         from_attributes = True

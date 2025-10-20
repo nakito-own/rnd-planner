@@ -27,8 +27,8 @@ class Transport {
     return Transport(
       id: json['id'] as int,
       name: json['name'] as String,
-      model: json['model'] as String?,
-      govNumber: json['gov_number'] as String?,
+      model: json['model'] != null ? json['model'] as String : null,
+      govNumber: json['gov_number'] != null ? json['gov_number'] as String : null,
       carsharing: json['carsharing'] as bool,
       corporate: json['corporate'] as bool,
       autoVc: json['auto_vc'] as bool,
