@@ -15,7 +15,8 @@ class TablesPage extends StatelessWidget {
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       drawer: const AppDrawer(),
       body: Center(

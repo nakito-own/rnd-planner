@@ -6,6 +6,8 @@ import '../pages/dashboards_page.dart';
 import '../pages/shifts_page.dart';
 import '../pages/tables_page.dart';
 import '../pages/crews_page.dart';
+import '../pages/robots_page.dart';
+import '../pages/transports_page.dart';
 import '../pages/tg_scenarios_page.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -14,20 +16,11 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
+      backgroundColor: Colors.transparent,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          SizedBox(height: 40),
-          Center(
-            child: Text(
-              'R&D Planner',
-              style: ThemeService.subheadingStyle.copyWith(
-                color: Colors.white,
-                fontSize: 20,
-              ),
-            ),
-          ),
-          SizedBox(height: 40),
+          SizedBox(height: 60),
           _buildDrawerButton(
             context,
             icon: CupertinoIcons.house_fill,
@@ -90,6 +83,31 @@ class AppDrawer extends StatelessWidget {
           ),
           _buildDrawerButton(
             context,
+            icon: CupertinoIcons.square_stack_3d_up,
+            title: 'Robots',
+            pngIcon: 'assets/images/robot_icon.png',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const RobotsPage()),
+              );
+            },
+          ),
+          _buildDrawerButton(
+            context,
+            icon: CupertinoIcons.car,
+            title: 'Transports',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const TransportsPage()),
+              );
+            },
+          ),
+          _buildDrawerButton(
+            context,
             icon: CupertinoIcons.chat_bubble_2_fill,
             title: 'TG Scenarios',
             onTap: () {
@@ -110,6 +128,7 @@ class AppDrawer extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    String? pngIcon,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final surfaceColor = colorScheme.surface;
@@ -118,8 +137,8 @@ class AppDrawer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(12),
+        color: surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
         elevation: 1,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
@@ -128,11 +147,31 @@ class AppDrawer extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: colorScheme.onSurface,
-                  size: 24,
-                ),
+                pngIcon != null
+                    ? ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          colorScheme.onSurface,
+                          BlendMode.srcIn,
+                        ),
+                        child: Image.asset(
+                          pngIcon,
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Fallback to icon if PNG is missing
+                            return Icon(
+                              icon,
+                              color: colorScheme.onSurface,
+                              size: 24,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        icon,
+                        color: colorScheme.onSurface,
+                        size: 24,
+                      ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(

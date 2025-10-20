@@ -16,12 +16,6 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
-    _features = [
-      'Планирование исследований',
-      'Управление проектами',
-      'Отслеживание прогресса',
-      'Аналитика и отчеты',
-    ];
   }
   
   @override
@@ -33,14 +27,15 @@ class _MainPageState extends State<MainPage> {
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(ThemeService.getThemeIcon()),
             onPressed: () async {
               await ThemeService.toggleTheme();
             },
-            tooltip: 'Переключить тему (${ThemeService.getThemeName()})',
+            tooltip: 'Switch theme (${ThemeService.getThemeName()})',
           ),
         ],
       ),
@@ -61,13 +56,13 @@ class _MainPageState extends State<MainPage> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Добро пожаловать в R&D Planner',
+                    'Welcome to R&D Planner',
                     style: ThemeService.displayStyle,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Приложение находится в разработке',
+                    'The application is under development',
                     style: ThemeService.bodyStyle.copyWith(
                       color: Colors.grey,
                     ),
@@ -76,28 +71,11 @@ class _MainPageState extends State<MainPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 40),
-            Text(
-              'Функциональность',
-              style: ThemeService.subheadingStyle,
-            ),
-            const SizedBox(height: 10),
-            _buildFeatureList(),
           ],
         ),
       ),
     );
   }
-  
-  Widget _buildFeatureList() {
-    return Column(
-      children: _features.map((feature) => _FeatureItem(
-        text: feature,
-        key: ValueKey(feature),
-      )).toList(),
-    );
-  }
-
 }
 
 class _FeatureItem extends StatelessWidget {

@@ -76,11 +76,11 @@ class ThemeService {
   static String getThemeName() {
     switch (_currentTheme) {
       case ThemeMode.light:
-        return 'Светлая';
+        return 'Light';
       case ThemeMode.dark:
-        return 'Темная';
+        return 'Dark';
       case ThemeMode.system:
-        return 'Системная';
+        return 'System';
     }
   }
   

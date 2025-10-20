@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, JSON, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
+import enum
+
+class TaskType(str, enum.Enum):
+    ROUTE = "route"
+    CARPET = "carpet"
+    DEMO = "demo"
+    CUSTOM = "custom"
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -35,6 +42,7 @@ class Transport(Base):
     carsharing = Column(Boolean, default=False)
     corporate = Column(Boolean, default=False)
     auto_vc = Column(Boolean, default=False)
+    has_blockers = Column(Boolean, default=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -83,3 +91,30 @@ class Crew(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     members = relationship("Employee", back_populates="crew_rel")
+
+class Task(Base):
+    __tablename__ = "tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False)
+    executor = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    robot_name = Column(Integer, nullable=False)
+    transport_id = Column(Integer, ForeignKey("transports.id"), nullable=True)
+    time_start = Column(DateTime(timezone=True), nullable=False)
+    time_end = Column(DateTime(timezone=True), nullable=False)
+    type = Column(SQLEnum(TaskType), nullable=False)
+    geojson = Column(JSON, nullable=True)
+    tickets = Column(JSON, nullable=False)  # Список ссылок на сторонние ресурсы
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    shift_rel = relationship("Shift", back_populates="tasks")
+    executor_rel = relationship("Employee", back_populates="tasks")
+    transport_rel = relationship("Transport", back_populates="tasks")
+
+# Add back_populates to existing models
+Shift.tasks = relationship("Task", back_populates="shift_rel")
+Employee.tasks = relationship("Task", back_populates="executor_rel")
+Transport.tasks = relationship("Task", back_populates="transport_rel")

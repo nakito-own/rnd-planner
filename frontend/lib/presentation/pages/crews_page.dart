@@ -26,6 +26,10 @@ class _CrewsPageState extends State<CrewsPage> {
   bool _telemedicineFilter = false;
   bool _accessFilter = false;
   
+  // Поиск по ФИО
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearchVisible = false;
+  
   List<String> _availableBodies = [];
   List<int> _availableCrewIds = [];
 
@@ -37,6 +41,7 @@ class _CrewsPageState extends State<CrewsPage> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -79,6 +84,15 @@ class _CrewsPageState extends State<CrewsPage> {
   void _applyFilters() {
     setState(() {
       _employees = _allEmployees.where((employee) {
+        // Поиск по ФИО
+        if (_searchController.text.isNotEmpty) {
+          final searchText = _searchController.text.toLowerCase();
+          final fullName = employee.fullName.toLowerCase();
+          if (!fullName.contains(searchText)) {
+            return false;
+          }
+        }
+
         if (_selectedBody != null && employee.body != _selectedBody) {
           return false;
         }
@@ -116,6 +130,8 @@ class _CrewsPageState extends State<CrewsPage> {
       _driveFilter = false;
       _telemedicineFilter = false;
       _accessFilter = false;
+      _searchController.clear();
+      _isSearchVisible = false;
       _employees = _allEmployees;
     });
   }
@@ -140,7 +156,8 @@ class _CrewsPageState extends State<CrewsPage> {
           style: ThemeService.subheadingStyle,
         ),
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.add),
@@ -391,37 +408,53 @@ class _CrewsPageState extends State<CrewsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        employee.fullName,
-                        style: ThemeService.subheadingStyle,
-                      ),
-                      if (employee.staff != null && employee.staff!.isNotEmpty)
-                        Text(
-                          employee.staff!,
-                          style: ThemeService.bodyStyle.copyWith(
-                            color: Colors.grey[600],
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ФИО и дополнительная информация справа от ФИО
+                          Row(
+                            children: [
+                              Text(
+                                employee.fullName,
+                                style: ThemeService.subheadingStyle,
+                              ),
+                              const SizedBox(width: 16),
+                              // Информация справа от ФИО, выровненная по левому краю
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (employee.body != null && employee.body!.isNotEmpty) ...[
+                                    _buildCompactInfoRow('Body', employee.body!),
+                                    const SizedBox(width: 12),
+                                  ],
+                                  if (employee.tg != null && employee.tg!.isNotEmpty) ...[
+                                    _buildCompactInfoRow('Telegram', employee.tg!),
+                                    const SizedBox(width: 12),
+                                  ],
+                                  if (employee.crew != null)
+                                    _buildCompactInfoRow('Crew', 'ID: ${employee.crew}'),
+                                ],
+                              ),
+                            ],
                           ),
-                        ),
+                          // Должность под ФИО
+                          if (employee.staff != null && employee.staff!.isNotEmpty)
+                            Text(
+                              employee.staff!,
+                              style: ThemeService.bodyStyle.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(CupertinoIcons.pencil),
+                  icon: const Icon(CupertinoIcons.pencil_circle),
                   onPressed: () => _openEmployeeForm(employee: employee),
                   tooltip: 'Edit employee',
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (employee.body != null && employee.body!.isNotEmpty)
-                  Expanded(child: _buildInfoRow('Body', employee.body!)),
-                if (employee.tg != null && employee.tg!.isNotEmpty)
-                  Expanded(child: _buildInfoRow('Telegram', employee.tg!)),
-                if (employee.crew != null)
-                  Expanded(child: _buildInfoRow('Crew', 'ID: ${employee.crew}')),
               ],
             ),
             const SizedBox(height: 12),
@@ -555,27 +588,68 @@ class _CrewsPageState extends State<CrewsPage> {
                 ),
               ),
               
-              TextButton.icon(
-                onPressed: _clearFilters,
-                icon: Icon(
-                  CupertinoIcons.clear, 
-                  size: 14,
-                  color: Colors.red[600],
-                ),
-                label: Text(
-                  'Clear All',
-                  style: TextStyle(
-                    color: Colors.red[600],
-                    fontSize: 12,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isSearchVisible = !_isSearchVisible;
+                        if (!_isSearchVisible) {
+                          _searchController.clear();
+                          _applyFilters();
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      _isSearchVisible ? CupertinoIcons.search_circle_fill : CupertinoIcons.search,
+                      size: 14,
+                      color: _isSearchVisible ? Colors.blue : Colors.grey[600],
+                    ),
+                    label: Text(
+                      'Search',
+                      style: TextStyle(
+                        color: _isSearchVisible ? Colors.blue : Colors.grey[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _clearFilters,
+                    icon: Icon(
+                      CupertinoIcons.clear, 
+                      size: 14,
+                      color: Colors.red[600],
+                    ),
+                    label: Text(
+                      'Clear All',
+                      style: TextStyle(
+                        color: Colors.red[600],
+                        fontSize: 12,
+                      ),
+                    ),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
               ),
             ],
+          ),
+          
+          // Поле поиска по ФИО
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            height: _isSearchVisible ? 60 : 0,
+            child: _isSearchVisible ? _buildSearchField(isDark) : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -731,6 +805,95 @@ class _CrewsPageState extends State<CrewsPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSearchField(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search by name...',
+          hintStyle: TextStyle(
+            color: isDark ? Colors.white54 : Colors.black54,
+            fontSize: 14,
+          ),
+          prefixIcon: Icon(
+            CupertinoIcons.search,
+            color: isDark ? Colors.white70 : Colors.black54,
+            size: 18,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  icon: Icon(
+                    CupertinoIcons.clear,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    size: 16,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                    _applyFilters();
+                  },
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(
+              color: isDark ? Colors.grey[600]! : Colors.grey[400]!,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.blue),
+          ),
+          filled: true,
+          fillColor: isDark ? Colors.grey[800] : Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        ),
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+          fontSize: 14,
+        ),
+        onChanged: (value) {
+          _applyFilters();
+        },
+      ),
+    );
+  }
+
+  Widget _buildCompactInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '$label: ',
+            style: ThemeService.bodyStyle.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+              fontSize: 14,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: ThemeService.bodyStyle.copyWith(
+                fontSize: 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -46,3 +46,7 @@ flutter:
         - asset: assets/fonts/YandexSansText-RegularItalic.ttf
           weight: 400
           style: italic
+
+  # Ассеты для изображений роботов
+  assets:
+    - assets/images/

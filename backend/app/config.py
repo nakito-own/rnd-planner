@@ -6,7 +6,7 @@ load_dotenv()
 class Settings:
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        "mysql+pymysql://root:password@localhost:3306/rnd_planner"
+        "mysql+pymysql://root:password@localhost:3307/rnd_planner"
     )
     
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -33,6 +33,12 @@ class ScenarioStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
     ARCHIVED = "archived"
+
+class TaskType(str, Enum):
+    ROUTE = "route"
+    CARPET = "carpet"
+    DEMO = "demo"
+    CUSTOM = "custom"
 
 class DashboardBase(BaseModel):
     name: str = Field(...)
@@ -219,6 +225,7 @@ class TransportBase(BaseModel):
     carsharing: bool = Field(False)
     corporate: bool = Field(False)
     auto_vc: bool = Field(False)
+    has_blockers: bool = Field(False)
 
 class TransportCreate(TransportBase):
     pass
@@ -230,6 +237,7 @@ class TransportUpdate(BaseModel):
     carsharing: Optional[bool] = None
     corporate: Optional[bool] = None
     auto_vc: Optional[bool] = None
+    has_blockers: Optional[bool] = None
 
 class Transport(TransportBase):
     id: int
@@ -284,6 +292,52 @@ class ShiftUpdate(BaseModel):
     geojson: Optional[Dict[str, Any]] = None
 
 class Shift(ShiftBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TaskBase(BaseModel):
+    shift_id: int = Field(..., description="ID смены, к которой привязана задача")
+    executor: int = Field(..., description="ID сотрудника исполнителя")
+    robot_name: int = Field(..., description="Номер робота")
+    transport_id: Optional[int] = Field(None, description="ID выделенного для задачи транспорта")
+    time_start: datetime = Field(..., description="Время начала задачи")
+    time_end: datetime = Field(..., description="Время окончания задачи")
+    type: TaskType = Field(..., description="Тип задачи")
+    geojson: Optional[Dict[str, Any]] = Field(None, description="GeoJSON данные для маршрута")
+    tickets: List[str] = Field(..., description="Ссылки на сторонний ресурс")
+
+    @validator('geojson')
+    def validate_geojson(cls, v, values):
+        task_type = values.get('type')
+        if task_type == TaskType.ROUTE and v is None:
+            raise ValueError('geojson обязателен для задач типа route')
+        return v
+
+    @validator('tickets')
+    def validate_tickets(cls, v):
+        if not v or len(v) == 0:
+            raise ValueError('tickets не может быть пустым')
+        return v
+
+class TaskCreate(TaskBase):
+    pass
+
+class TaskUpdate(BaseModel):
+    shift_id: Optional[int] = None
+    executor: Optional[int] = None
+    robot_name: Optional[int] = None
+    transport_id: Optional[int] = None
+    time_start: Optional[datetime] = None
+    time_end: Optional[datetime] = None
+    type: Optional[TaskType] = None
+    geojson: Optional[Dict[str, Any]] = None
+    tickets: Optional[List[str]] = None
+
+class Task(TaskBase):
     id: int
     created_at: datetime
     updated_at: datetime
