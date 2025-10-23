@@ -150,7 +150,7 @@ class AppDrawer extends StatelessWidget {
                 pngIcon != null
                     ? ColorFiltered(
                         colorFilter: ColorFilter.mode(
-                          colorScheme.onSurface,
+                          Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                           BlendMode.srcIn,
                         ),
                         child: Image.asset(
@@ -158,10 +158,9 @@ class AppDrawer extends StatelessWidget {
                           width: 24,
                           height: 24,
                           errorBuilder: (context, error, stackTrace) {
-                            // Fallback to icon if PNG is missing
                             return Icon(
                               icon,
-                              color: colorScheme.onSurface,
+                              color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                               size: 24,
                             );
                           },
@@ -169,7 +168,7 @@ class AppDrawer extends StatelessWidget {
                       )
                     : Icon(
                         icon,
-                        color: colorScheme.onSurface,
+                        color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                         size: 24,
                       ),
                 const SizedBox(width: 16),
@@ -177,14 +176,14 @@ class AppDrawer extends StatelessWidget {
                   child: Text(
                     title,
                     style: ThemeService.bodyStyle.copyWith(
-                      color: colorScheme.onSurface,
+                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.black.withOpacity(0.6),
                   size: 16,
                 ),
               ],

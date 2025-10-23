@@ -22,12 +22,22 @@ def create_sample_data():
     db = SessionLocal()
     
     try:
-        crew = Crew(
+        # Создаем первую команду
+        crew1 = Crew(
             name="Команда разработки",
             max_members=5,
             owner_id=1
         )
-        db.add(crew)
+        db.add(crew1)
+        db.flush()
+        
+        # Создаем вторую команду
+        crew2 = Crew(
+            name="Команда тестирования",
+            max_members=3,
+            owner_id=1
+        )
+        db.add(crew2)
         db.flush()
         
         employees = [
@@ -43,7 +53,7 @@ def create_sample_data():
                 telemedicine=True,
                 attorney=False,
                 acces_to_auto_vc=False,
-                crew=crew.id
+                crew=crew1.id
             ),
             Employee(
                 firstname="Илья",
@@ -57,7 +67,7 @@ def create_sample_data():
                 telemedicine=True,
                 attorney=True,
                 acces_to_auto_vc=True,
-                crew=crew.id
+                crew=crew1.id
             )
         ]
         
@@ -107,13 +117,29 @@ def create_sample_data():
         now = datetime.now()
         shifts = [
             Shift(
-                executor="Данил Волков",
-                robot=robots[0].id,
-                transport_name="Modris",
+                date=now,
                 time_start=now,
-                time_end=now + timedelta(hours=12),
-                route=True,
-                carpet=False,
+                time_end=now + timedelta(hours=12)
+            )
+        ]
+        
+        for shift in shifts:
+            db.add(shift)
+        
+        db.flush()
+        
+        # Создаем задачи для смен
+        from app.models.database_models import Task, TaskType
+        
+        tasks = [
+            Task(
+                shift_id=shifts[0].id,
+                executor=employees[0].id,  # Данил Волков
+                robot_name=robots[0].name,  # 188
+                transport_id=transports[0].id,  # Modris
+                time_start=now,
+                time_end=now + timedelta(hours=8),
+                type=TaskType.ROUTE,
                 geojson={
                     "type": "FeatureCollection",
                     "features": [
@@ -128,12 +154,24 @@ def create_sample_data():
                             }
                         }
                     ]
-                }
+                },
+                tickets=["https://example.com/ticket1", "https://example.com/ticket2"]
+            ),
+            Task(
+                shift_id=shifts[0].id,
+                executor=employees[1].id,  # Илья Воронов
+                robot_name=robots[1].name,  # 295
+                transport_id=transports[1].id,  # Каршеринг
+                time_start=now + timedelta(hours=4),
+                time_end=now + timedelta(hours=12),
+                type=TaskType.CARPET,
+                geojson=None,
+                tickets=["https://example.com/ticket3"]
             )
         ]
         
-        for shift in shifts:
-            db.add(shift)
+        for task in tasks:
+            db.add(task)
         
         db.commit()
         print("✅ Примеры данных успешно созданы!")

@@ -33,10 +33,8 @@ class TaskCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок задачи
               Row(
                 children: [
-                  // Иконка типа задачи
                   Container(
                     width: 32,
                     height: 32,
@@ -45,16 +43,16 @@ class TaskCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
-                      child: Text(
+                      child: Icon(
                         task.typeIcon,
-                        style: const TextStyle(fontSize: 16),
+                        size: 16,
+                        color: _getTaskTypeColor(context),
                       ),
                     ),
                   ),
                   
                   const SizedBox(width: 12),
                   
-                  // Информация о задаче
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +65,7 @@ class TaskCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          task.robotName != null ? 'Робот #${task.robotName}' : 'Робот не назначен',
+                          task.robotName != null ? 'Robot A${task.robotName}' : 'Robot not assigned',
                           style: ThemeService.captionStyle.copyWith(
                             color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           ),
@@ -86,7 +84,6 @@ class TaskCard extends StatelessWidget {
                     ),
                   ),
                   
-                  // Время выполнения
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -109,13 +106,11 @@ class TaskCard extends StatelessWidget {
               
               const SizedBox(height: 12),
               
-              // Дополнительная информация
               Row(
                 children: [
-                  // Исполнитель
                   _buildInfoChip(
                     context,
-                    task.executorName ?? (task.executor != null ? 'Исполнитель #${task.executor}' : 'Исполнитель не назначен'),
+                    task.executorName ?? (task.executor != null ? 'Executor #${task.executor}' : 'Executor not assigned'),
                     CupertinoIcons.person,
                   ),
                   
@@ -132,7 +127,7 @@ class TaskCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     _buildInfoChip(
                       context,
-                      'Транспорт #${task.transportId}',
+                      'Transport #${task.transportId}',
                       CupertinoIcons.car,
                     ),
                   ],
@@ -141,14 +136,13 @@ class TaskCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     _buildInfoChip(
                       context,
-                      '${task.tickets.length} тикетов',
+                      '${task.tickets.length} tickets',
                       CupertinoIcons.ticket,
                     ),
                   ],
                 ],
               ),
               
-              // Геоданные (если есть)
               if (task.geojson != null) ...[
                 const SizedBox(height: 8),
                 Container(
@@ -167,7 +161,7 @@ class TaskCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Маршрут настроен',
+                        'Route configured',
                         style: ThemeService.captionStyle.copyWith(
                           color: Theme.of(context).primaryColor,
                           fontWeight: FontWeight.w500,

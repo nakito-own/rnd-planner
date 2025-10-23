@@ -59,14 +59,20 @@ async def get_employee(employee_id: int, db: Session = Depends(get_db)):
 
 @router.post("/employees", response_model=Employee)
 async def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
-    return employee_crud.create_employee(db, employee)
+    try:
+        return employee_crud.create_employee(db, employee)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/employees/{employee_id}", response_model=Employee)
 async def update_employee(employee_id: int, employee: EmployeeUpdate, db: Session = Depends(get_db)):
-    updated_employee = employee_crud.update_employee(db, employee_id, employee)
-    if not updated_employee:
-        raise HTTPException(status_code=404, detail="Сотрудник не найден")
-    return updated_employee
+    try:
+        updated_employee = employee_crud.update_employee(db, employee_id, employee)
+        if not updated_employee:
+            raise HTTPException(status_code=404, detail="Сотрудник не найден")
+        return updated_employee
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/employees/{employee_id}")
 async def delete_employee(employee_id: int, db: Session = Depends(get_db)):

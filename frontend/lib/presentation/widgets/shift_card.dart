@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/services/theme_service.dart';
 import '../../data/models/shift_model.dart';
-import '../../data/models/task_model.dart';
 import 'task_card.dart';
 
 class ShiftCard extends StatelessWidget {
   final Shift shift;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
   const ShiftCard({
     super.key,
     required this.shift,
     this.onTap,
+    this.onEdit,
   });
 
   @override
@@ -23,24 +24,25 @@ class ShiftCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Заголовок смены
               Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Смена #${shift.id}',
+                      'Shift ${shift.date}',
                       style: ThemeService.captionStyle.copyWith(
-                        color: Theme.of(context).primaryColor,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -50,14 +52,23 @@ class ShiftCard extends StatelessWidget {
                     shift.formattedDate,
                     style: ThemeService.bodyStyle.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
+                  if (onEdit != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: onEdit,
+                      icon: const Icon(CupertinoIcons.pencil),
+                      iconSize: 18,
+                      tooltip: 'Edit shift',
+                    ),
+                  ],
                 ],
               ),
               
               const SizedBox(height: 12),
               
-              // Время смены
               Row(
                 children: [
                   Icon(
@@ -70,6 +81,7 @@ class ShiftCard extends StatelessWidget {
                     shift.formattedTimeRange,
                     style: ThemeService.bodyStyle.copyWith(
                       fontWeight: FontWeight.w500,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -90,39 +102,37 @@ class ShiftCard extends StatelessWidget {
               
               const SizedBox(height: 16),
               
-              // Статистика задач
               Row(
                 children: [
                   _buildStatItem(
                     context,
-                    'Задач',
+                    'Tasks',
                     shift.tasks.length.toString(),
                     CupertinoIcons.list_bullet,
                   ),
                   const SizedBox(width: 24),
                   _buildStatItem(
                     context,
-                    'Роботов',
+                    'Robots',
                     shift.tasks.where((t) => t.robotName != null).map((t) => t.robotName!).toSet().length.toString(),
                     CupertinoIcons.cube_box,
                   ),
                   const SizedBox(width: 24),
                   _buildStatItem(
                     context,
-                    'Исполнителей',
+                    'Executors',
                     shift.tasks.where((t) => t.executor != null).map((t) => t.executor!).toSet().length.toString(),
                     CupertinoIcons.person_2,
                   ),
                 ],
               ),
               
-              // Список задач
               if (shift.tasks.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 const Divider(),
                 const SizedBox(height: 12),
                 Text(
-                  'Задачи смены',
+                  'Tasks of shift',
                   style: ThemeService.subheadingStyle,
                 ),
                 const SizedBox(height: 12),
@@ -133,6 +143,7 @@ class ShiftCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
       ),
     );
   }
@@ -151,6 +162,7 @@ class ShiftCard extends StatelessWidget {
           value,
           style: ThemeService.bodyStyle.copyWith(
             fontWeight: FontWeight.w600,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
         ),
         const SizedBox(width: 4),

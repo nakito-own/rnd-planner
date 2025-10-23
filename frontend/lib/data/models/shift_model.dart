@@ -51,8 +51,8 @@ class Shift {
 
   String get formattedDate {
     final months = [
-      'янв', 'фев', 'мар', 'апр', 'май', 'июн',
-      'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'
+      'jan', 'feb', 'mar', 'apr', 'may', 'jun',
+      'jul', 'aug', 'sep', 'oct', 'nov', 'dec'
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -71,8 +71,8 @@ class Shift {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     if (hours > 0) {
-      return '${hours}ч ${minutes}м';
+      return '${hours}h ${minutes}min';
     }
-    return '${minutes}м';
+    return '${minutes}min';
   }
 }

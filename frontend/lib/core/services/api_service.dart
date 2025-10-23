@@ -434,9 +434,7 @@ class ApiService {
   // Shifts API methods
   static Future<bool> testConnection() async {
     try {
-      print('Testing connection to: $baseUrl/shifts/test');
-      
-      // Сначала пробуем тестовую ручку
+      // Test connection to shifts endpoint
       final testResponse = await http.get(
         Uri.parse('$baseUrl/shifts/test'),
         headers: {
@@ -444,17 +442,11 @@ class ApiService {
         },
       ).timeout(const Duration(seconds: 5));
       
-      print('Test response status: ${testResponse.statusCode}');
-      print('Test response body: ${testResponse.body}');
-      print('Test response headers: ${testResponse.headers}');
-      
       if (testResponse.statusCode == 200) {
-        print('Test endpoint works: ${testResponse.body}');
         return true;
       }
       
-      // Если тестовая ручка не работает, пробуем корневую
-      print('Trying root endpoint: $baseUrl/');
+      // If test endpoint doesn't work, try root endpoint
       final response = await http.get(
         Uri.parse('$baseUrl/'),
         headers: {
@@ -462,28 +454,20 @@ class ApiService {
         },
       ).timeout(const Duration(seconds: 5));
       
-      print('Root response status: ${response.statusCode}');
-      print('Root response body: ${response.body}');
-      
       return response.statusCode == 200;
     } catch (e) {
-      print('Connection test failed: $e');
-      print('Error type: ${e.runtimeType}');
       return false;
     }
   }
 
   static Future<Shift?> getShiftByDate(DateTime date) async {
     try {
-      // FastAPI ожидает полный datetime формат с разделителем T
-      // Создаем datetime с временем 00:00:00
+      // FastAPI expects full datetime format with T separator
+      // Create datetime with time 00:00:00
       final dateTime = DateTime(date.year, date.month, date.day);
-      final dateStr = dateTime.toIso8601String(); // Полный ISO формат
+      final dateStr = dateTime.toIso8601String(); // Full ISO format
       
       final url = '$baseUrl/shifts/date/$dateStr';
-      print('Making request to: $url'); // Debug log
-      print('Date string: $dateStr');
-      print('Base URL: $baseUrl');
       
       final response = await http.get(
         Uri.parse(url),
@@ -492,37 +476,256 @@ class ApiService {
         },
       ).timeout(const Duration(seconds: 10)); // Добавляем таймаут
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
-      print('Response headers: ${response.headers}');
-
       if (response.statusCode == 200) {
         final List<dynamic> jsonList = jsonDecode(response.body);
-        print('Parsed JSON list length: ${jsonList.length}');
         if (jsonList.isEmpty) {
-          print('No shifts found for date: $dateStr');
-          // Если смены на эту дату нет, возвращаем null
+          // If no shifts found for this date, return null
           return null;
         } else {
-          print('Found ${jsonList.length} shifts, returning first one');
-          // Возвращаем первую смену из списка
+          // Return first shift from the list
           return Shift.fromJson(jsonList.first);
         }
       } else {
         final errorBody = response.body;
-        print('Error response: $errorBody');
         throw Exception('Failed to load shift: ${response.statusCode} - $errorBody');
       }
     } catch (e) {
-      print('Error details: $e'); // Debug log
-      print('Error type: ${e.runtimeType}');
       if (e.toString().contains('Failed to fetch')) {
-        throw Exception('Не удается подключиться к серверу. Проверьте, что бекенд запущен на $baseUrl');
+        throw Exception('Unable to connect to server. Check that backend is running on $baseUrl');
       } else if (e.toString().contains('TimeoutException')) {
-        throw Exception('Превышено время ожидания ответа от сервера');
+        throw Exception('Server response timeout exceeded');
       } else {
-        throw Exception('Ошибка загрузки смены: $e');
+        throw Exception('Error loading shift: $e');
       }
+    }
+  }
+
+  // Shifts CRUD methods
+  static Future<List<Shift>> getShifts({
+    int skip = 0,
+    int limit = 100,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'skip': skip.toString(),
+        'limit': limit.toString(),
+      };
+
+      final uri = Uri.parse('$baseUrl/shifts').replace(
+        queryParameters: queryParams,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => Shift.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load shifts: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading shifts: $e');
+    }
+  }
+
+  static Future<Shift> getShift(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/shifts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Shift.fromJson(json);
+      } else {
+        throw Exception('Failed to load shift: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading shift: $e');
+    }
+  }
+
+  static Future<Shift> createShift(Map<String, dynamic> shiftData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/shifts'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(shiftData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Shift.fromJson(json);
+      } else {
+        throw Exception('Failed to create shift: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error creating shift: $e');
+    }
+  }
+
+  static Future<Shift> updateShift(int id, Map<String, dynamic> shiftData) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/shifts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(shiftData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Shift.fromJson(json);
+      } else {
+        throw Exception('Failed to update shift: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating shift: $e');
+    }
+  }
+
+  static Future<void> deleteShift(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/shifts/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete shift: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting shift: $e');
+    }
+  }
+
+  // Tasks API methods
+  static Future<List<Task>> getTasks({
+    int skip = 0,
+    int limit = 100,
+    int? shiftId,
+  }) async {
+    try {
+      final queryParams = <String, String>{
+        'skip': skip.toString(),
+        'limit': limit.toString(),
+      };
+      
+      if (shiftId != null) {
+        queryParams['shift_id'] = shiftId.toString();
+      }
+
+      final uri = Uri.parse('$baseUrl/tasks').replace(
+        queryParameters: queryParams,
+      );
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => Task.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load tasks: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading tasks: $e');
+    }
+  }
+
+  static Future<Task> getTask(int id) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/tasks/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Task.fromJson(json);
+      } else {
+        throw Exception('Failed to load task: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading task: $e');
+    }
+  }
+
+  static Future<Task> createTask(Map<String, dynamic> taskData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/tasks'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(taskData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Task.fromJson(json);
+      } else {
+        throw Exception('Failed to create task: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error creating task: $e');
+    }
+  }
+
+  static Future<Task> updateTask(int id, Map<String, dynamic> taskData) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/tasks/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(taskData),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return Task.fromJson(json);
+      } else {
+        throw Exception('Failed to update task: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error updating task: $e');
+    }
+  }
+
+  static Future<void> deleteTask(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/tasks/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete task: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error deleting task: $e');
     }
   }
 

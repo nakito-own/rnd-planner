@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 enum TaskType {
   route,
   carpet,
@@ -41,14 +43,6 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> json) {
-    print('Task.fromJson - parsing task with keys: ${json.keys.toList()}');
-    print('Task.fromJson - id: ${json['id']} (type: ${json['id'].runtimeType})');
-    print('Task.fromJson - shift_id: ${json['shift_id']} (type: ${json['shift_id'].runtimeType})');
-    print('Task.fromJson - executor: ${json['executor']} (type: ${json['executor'].runtimeType})');
-    print('Task.fromJson - robot_name: ${json['robot_name']} (type: ${json['robot_name'].runtimeType})');
-    print('Task.fromJson - transport_id: ${json['transport_id']} (type: ${json['transport_id'].runtimeType})');
-    
-    print('Task.fromJson - creating Task object...');
     
     final task = Task(
       id: json['id'] as int,
@@ -71,7 +65,6 @@ class Task {
       transportGovNumber: json['transport_gov_number'] != null ? json['transport_gov_number'] as String : null,
     );
     
-    print('Task.fromJson - Task object created successfully');
     return task;
   }
 
@@ -109,34 +102,34 @@ class Task {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     if (hours > 0) {
-      return '${hours}ч ${minutes}м';
+      return '${hours}h ${minutes}min';
     }
-    return '${minutes}м';
+    return '${minutes}min';
   }
 
   String get typeDisplayName {
     switch (type) {
       case TaskType.route:
-        return 'Маршрут';
+        return 'Route';
       case TaskType.carpet:
-        return 'Ковер';
+        return 'Carpet';
       case TaskType.demo:
-        return 'Демо';
+        return 'Demo';
       case TaskType.custom:
-        return 'Кастом';
+        return 'Custom';
     }
   }
 
-  String get typeIcon {
+  IconData get typeIcon {
     switch (type) {
       case TaskType.route:
-        return '🗺️';
+        return CupertinoIcons.arrow_swap;
       case TaskType.carpet:
-        return '🧹';
+        return CupertinoIcons.map;
       case TaskType.demo:
-        return '🎯';
+        return CupertinoIcons.bolt_fill;
       case TaskType.custom:
-        return '⚙️';
+        return CupertinoIcons.gear;
     }
   }
 }

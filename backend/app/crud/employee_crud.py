@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from app.models.database_models import Employee
+from app.models.database_models import Employee, Crew
 from app.models.schemas import EmployeeCreate, EmployeeUpdate
 from typing import List, Optional
 
@@ -51,7 +51,14 @@ def get_employees_with_filters(
 def get_employees_by_crew(db: Session, crew_id: int) -> List[Employee]:
     return db.query(Employee).filter(Employee.crew == crew_id).all()
 
+def crew_exists(db: Session, crew_id: int) -> bool:
+    return db.query(Crew).filter(Crew.id == crew_id).first() is not None
+
 def create_employee(db: Session, employee: EmployeeCreate) -> Employee:
+    # Проверяем, что crew существует, если указан
+    if employee.crew is not None and not crew_exists(db, employee.crew):
+        raise ValueError(f"Crew with id {employee.crew} does not exist")
+    
     db_employee = Employee(**employee.dict())
     db.add(db_employee)
     db.commit()
@@ -62,6 +69,12 @@ def update_employee(db: Session, employee_id: int, employee: EmployeeUpdate) -> 
     db_employee = get_employee(db, employee_id)
     if db_employee:
         update_data = employee.dict(exclude_unset=True)
+        
+        # Проверяем, что crew существует, если указан
+        if 'crew' in update_data and update_data['crew'] is not None:
+            if not crew_exists(db, update_data['crew']):
+                raise ValueError(f"Crew with id {update_data['crew']} does not exist")
+        
         for field, value in update_data.items():
             setattr(db_employee, field, value)
         db.commit()
