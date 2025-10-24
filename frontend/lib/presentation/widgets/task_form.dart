@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/api_service.dart';
 import '../../data/models/employee_model.dart';
@@ -390,15 +392,61 @@ class _TaskFormState extends State<TaskForm> {
   }
 
   Future<void> _selectGeojsonFile() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (context) => _GeojsonInputDialog(),
-    );
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'geojson'],
+        withData: true, // Read file data for both web and mobile
+      );
 
-    if (result != null) {
-      setState(() {
-        _geojsonData = result;
-      });
+      if (result != null && result.files.single.bytes != null) {
+        final content = utf8.decode(result.files.single.bytes!);
+        
+        try {
+          final jsonData = json.decode(content);
+          if (jsonData is Map<String, dynamic>) {
+            setState(() {
+              _geojsonData = jsonData;
+            });
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('GeoJSON file loaded successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('GeoJSON must be an object'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Invalid JSON format: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1170,128 +1218,6 @@ class _TaskFormState extends State<TaskForm> {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _GeojsonInputDialog extends StatefulWidget {
-  @override
-  _GeojsonInputDialogState createState() => _GeojsonInputDialogState();
-}
-
-class _GeojsonInputDialogState extends State<_GeojsonInputDialog> {
-  final _controller = TextEditingController();
-  String? _errorMessage;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _loadSampleGeojson() {
-    setState(() {
-      _controller.text = '''{
-  "type": "FeatureCollection",
-  "features": [
-    {
-      "type": "Feature",
-      "properties": {
-        "name": "Sample Route"
-      },
-      "geometry": {
-        "type": "LineString",
-        "coordinates": [
-          [37.6173, 55.7558],
-          [37.6200, 55.7600],
-          [37.6250, 55.7650]
-        ]
-      }
-    }
-  ]
-}''';
-      _errorMessage = null;
-    });
-  }
-
-  void _validateAndSubmit() {
-    try {
-      final jsonData = json.decode(_controller.text);
-      if (jsonData is Map<String, dynamic>) {
-        Navigator.pop(context, jsonData);
-      } else {
-        setState(() {
-            _errorMessage = 'GeoJSON must be an object';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Invalid JSON format: $e';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Input GeoJSON'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Enter GeoJSON data for the route:',
-              style: ThemeService.bodyStyle,
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                maxLines: 10,
-                decoration: InputDecoration(
-                  hintText: 'Insert GeoJSON data...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: _loadSampleGeojson,
-                  child: const Text('Load example'),
-                ),
-                const Spacer(),
-                if (_errorMessage != null)
-                  Expanded(
-                    child: Text(
-                      _errorMessage!,
-                      style: ThemeService.bodyStyle.copyWith(
-                        color: Colors.red,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _validateAndSubmit,
-          child: const Text('Load'),
-        ),
-      ],
     );
   }
 }

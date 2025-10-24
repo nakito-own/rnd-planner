@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeService {
@@ -19,19 +20,29 @@ class ThemeService {
   }
   
   static Future<void> initializeTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final themeIndex = prefs.getInt(_themeKey);
-    
-    if (themeIndex != null) {
-      _currentTheme = ThemeMode.values[themeIndex];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final themeIndex = prefs.getInt(_themeKey);
+      
+      if (themeIndex != null && themeIndex < ThemeMode.values.length) {
+        _currentTheme = ThemeMode.values[themeIndex];
+      }
+    } catch (e) {
+      // If initialization fails, use default theme
+      debugPrint('Error loading theme from preferences: $e');
+      _currentTheme = ThemeMode.system;
     }
     
     _preloadStyles();
   }
   
   static Future<void> _saveTheme(ThemeMode theme) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_themeKey, theme.index);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_themeKey, theme.index);
+    } catch (e) {
+      debugPrint('Error saving theme to preferences: $e');
+    }
   }
   
   static Future<void> toggleTheme() async {

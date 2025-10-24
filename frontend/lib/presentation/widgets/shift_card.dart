@@ -67,7 +67,6 @@ class _ShiftCardState extends State<ShiftCard> {
       child: TaskForm(
         shiftId: _currentShift.id,
         onSaved: () {
-          // Reload the shift data to get updated task information
           widget.onTaskUpdated?.call();
         },
         showAppBar: false,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'presentation/pages/main_page.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/theme_service.dart';
@@ -7,7 +9,22 @@ final GlobalKey<_MyAppState> appKey = GlobalKey<_MyAppState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await ThemeService.initializeTheme();
+  
+  // Initialize SharedPreferences first for web compatibility
+  try {
+    await SharedPreferences.getInstance();
+  } catch (e) {
+    debugPrint('Error initializing SharedPreferences: $e');
+  }
+  
+  // Then initialize theme
+  try {
+    await ThemeService.initializeTheme();
+  } catch (e) {
+    // If theme initialization fails, continue with default theme
+    debugPrint('Error initializing theme: $e');
+  }
+  
   runApp(MyApp(key: appKey));
 }
 
@@ -30,6 +47,18 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+      locale: const Locale('en', 'GB'), // Use GB locale so week starts on Monday, but keep English text
+      localeResolutionCallback: (locales, supportedLocales) {
+        return const Locale('en', 'GB');
+      },
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'GB'), // English (UK) - week starts on Monday
+      ],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,

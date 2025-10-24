@@ -5,7 +5,8 @@ import '../../core/services/api_service.dart';
 import '../../data/models/shift_model.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/shift_card.dart';
-import 'shift_form_page.dart';
+import '../widgets/shift_form.dart';
+import '../widgets/side_sheet.dart';
 
 class ShiftsPage extends StatefulWidget {
   const ShiftsPage({super.key});
@@ -19,14 +20,21 @@ class _ShiftsPageState extends State<ShiftsPage> {
   bool _isLoading = true;
   String? _errorMessage;
   DateTime _selectedDate = DateTime.now();
+  
+  // Cache for shifts
+  final Map<String, Shift?> _shiftCache = {};
 
   @override
   void initState() {
     super.initState();
-    _loadShiftForDate(_selectedDate);
+    _loadShiftsWithCache(_selectedDate);
   }
 
-  Future<void> _loadShiftForDate(DateTime date) async {
+  String _dateKey(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
+  }
+
+  Future<void> _loadShiftsWithCache(DateTime date) async {
     if (!mounted) return;
     
     setState(() {
@@ -48,10 +56,16 @@ class _ShiftsPageState extends State<ShiftsPage> {
         return;
       }
 
-      final shift = await ApiService.getShiftByDate(date);
+      // Load current date and cache
+      final currentShift = await ApiService.getShiftByDate(date);
+      _shiftCache[_dateKey(date)] = currentShift;
+      
+      // Preload adjacent days in background
+      _preloadAdjacentShifts(date);
+
       if (mounted) {
         setState(() {
-          _currentShift = shift;
+          _currentShift = currentShift;
           _isLoading = false;
         });
       }
@@ -61,6 +75,33 @@ class _ShiftsPageState extends State<ShiftsPage> {
           _isLoading = false;
           _errorMessage = 'Error loading shift: $e';
         });
+      }
+    }
+  }
+
+  Future<void> _preloadAdjacentShifts(DateTime date) async {
+    final yesterday = date.subtract(const Duration(days: 1));
+    final tomorrow = date.add(const Duration(days: 1));
+    
+    final yesterdayKey = _dateKey(yesterday);
+    final tomorrowKey = _dateKey(tomorrow);
+    
+    // Load only if not cached
+    if (!_shiftCache.containsKey(yesterdayKey)) {
+      try {
+        final shift = await ApiService.getShiftByDate(yesterday);
+        _shiftCache[yesterdayKey] = shift;
+      } catch (e) {
+        // Silent fail for preloading
+      }
+    }
+    
+    if (!_shiftCache.containsKey(tomorrowKey)) {
+      try {
+        final shift = await ApiService.getShiftByDate(tomorrow);
+        _shiftCache[tomorrowKey] = shift;
+      } catch (e) {
+        // Silent fail for preloading
       }
     }
   }
@@ -95,21 +136,54 @@ class _ShiftsPageState extends State<ShiftsPage> {
             message: 'Refresh',
             child: IconButton(
               icon: const Icon(CupertinoIcons.refresh),
-              onPressed: () => _loadShiftForDate(_selectedDate),
+              onPressed: () => _loadShiftsWithCache(_selectedDate),
             ),
           ),
         ],
       ),
       drawer: const AppDrawer(),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
+          ? Column(
+              children: [
+                _buildDateHeader(),
+                const Expanded(
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              ],
             )
-          : _errorMessage != null
-              ? _buildErrorState()
-              : _currentShift == null
-                  ? _buildEmptyState()
-                  : _buildShiftView(),
+          : Column(
+            
+              children: [
+                _buildDateHeader(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.1, 0.0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _errorMessage != null
+                        ? _buildErrorState()
+                        : _currentShift == null
+                            ? _buildEmptyState()
+                            : _buildShiftView(),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -124,8 +198,44 @@ class _ShiftsPageState extends State<ShiftsPage> {
           data: Theme.of(context).copyWith(
             dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
+              backgroundColor: Theme.of(context).colorScheme.surface,
+            ),
+            datePickerTheme: DatePickerThemeData(
+              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.white;
+                }
+                return null;
+              }),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Theme.of(context).colorScheme.primary;
+                }
+                return null;
+              }),
+              todayForegroundColor: WidgetStateProperty.all(
+                Theme.of(context).colorScheme.primary,
+              ),
+              todayBackgroundColor: WidgetStateProperty.all(
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              ),
+              headerHeadlineStyle: ThemeService.headingStyle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              headerHelpStyle: ThemeService.bodyStyle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              weekdayStyle: ThemeService.captionStyle.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w500,
+              ),
+              dayStyle: ThemeService.bodyStyle,
+              headerForegroundColor: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           child: child!,
@@ -133,13 +243,106 @@ class _ShiftsPageState extends State<ShiftsPage> {
       },
     );
     if (picked != null && picked != _selectedDate) {
-      _loadShiftForDate(picked);
+      _loadShiftsWithCache(picked);
+    }
+  }
+
+  void _navigateToYesterday() {
+    final yesterday = _selectedDate.subtract(const Duration(days: 1));
+    final yesterdayKey = _dateKey(yesterday);
+    
+    // Check cache first
+    if (_shiftCache.containsKey(yesterdayKey)) {
+      setState(() {
+        _selectedDate = yesterday;
+        _currentShift = _shiftCache[yesterdayKey];
+      });
+      // Preload new adjacent days
+      _preloadAdjacentShifts(yesterday);
+    } else {
+      _loadShiftsWithCache(yesterday);
+    }
+  }
+
+  void _navigateToTomorrow() {
+    final tomorrow = _selectedDate.add(const Duration(days: 1));
+    final tomorrowKey = _dateKey(tomorrow);
+    
+    // Check cache first
+    if (_shiftCache.containsKey(tomorrowKey)) {
+      setState(() {
+        _selectedDate = tomorrow;
+        _currentShift = _shiftCache[tomorrowKey];
+      });
+      // Preload new adjacent days
+      _preloadAdjacentShifts(tomorrow);
+    } else {
+      _loadShiftsWithCache(tomorrow);
     }
   }
 
 
+  Widget _buildDateHeader() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            CupertinoIcons.calendar,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Shift on ${_formatDate(_selectedDate)}',
+                  style: ThemeService.subheadingStyle.copyWith(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+                Text(
+                  _currentShift != null
+                      ? '${_currentShift!.tasks.length} tasks'
+                      : 'No shift',
+                  style: ThemeService.captionStyle.copyWith(
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Tooltip(
+            message: 'Yesterday',
+            child: IconButton(
+              onPressed: _navigateToYesterday,
+              icon: const Icon(CupertinoIcons.chevron_left),
+            ),
+          ),
+          Tooltip(
+            message: 'Tomorrow',
+            child: IconButton(
+              onPressed: _navigateToTomorrow,
+              icon: const Icon(CupertinoIcons.chevron_right),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
+      key: ValueKey('empty_${_dateKey(_selectedDate)}'),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -188,6 +391,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
   Widget _buildErrorState() {
     return Center(
+      key: ValueKey('error_${_dateKey(_selectedDate)}'),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -214,7 +418,7 @@ class _ShiftsPageState extends State<ShiftsPage> {
           ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: () => _loadShiftForDate(_selectedDate),
+            onPressed: () => _loadShiftsWithCache(_selectedDate),
             child: const Text('Retry'),
           ),
         ],
@@ -224,74 +428,24 @@ class _ShiftsPageState extends State<ShiftsPage> {
 
   Widget _buildShiftView() {
     return RefreshIndicator(
+      key: ValueKey('shift_${_dateKey(_selectedDate)}'),
       onRefresh: () async {
-        _loadShiftForDate(_selectedDate);
+        _loadShiftsWithCache(_selectedDate);
       },
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    CupertinoIcons.calendar,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Shift on ${_formatDate(_selectedDate)}',
-                          style: ThemeService.subheadingStyle.copyWith(
-                            color: Theme.of(context).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                        Text(
-                            '${_currentShift!.tasks.length} tasks',
-                          style: ThemeService.captionStyle.copyWith(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Tooltip(
-                    message: 'Change date',
-                    child: IconButton(
-                      onPressed: _selectDate,
-                      icon: const Icon(CupertinoIcons.chevron_right),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ShiftCard(
-              shift: _currentShift!,
-              onTap: () {
-                // TODO: Add navigation to detailed shift page
-              },
-              onEdit: () => _editShift(_currentShift!),
-              onTaskUpdated: () async {
-                // Add a small delay to ensure the task is fully created on the server
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (mounted) {
-                  _loadShiftForDate(_selectedDate);
-                }
-              },
-            ),
-          ],
+        padding: const EdgeInsets.only(left: 4, right: 4, bottom: 16),
+        child: ShiftCard(
+          shift: _currentShift!,
+          onTap: () {
+            // TODO: Add navigation to detailed shift page
+          },
+          onEdit: () => _editShift(_currentShift!),
+          onTaskUpdated: () async {
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              _loadShiftsWithCache(_selectedDate);
+            }
+          },
         ),
       ),
     );
@@ -306,29 +460,37 @@ class _ShiftsPageState extends State<ShiftsPage> {
   }
 
   Future<void> _createShift() async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ShiftFormPage(),
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.zero,
+      barrierColor: Colors.black54,
+      child: ShiftForm(
+        initialDate: _selectedDate,
+        onSaved: () {
+          _loadShiftsWithCache(_selectedDate);
+        },
+        showAppBar: false,
       ),
     );
-    
-    if (result == true) {
-      _loadShiftForDate(_selectedDate);
-    }
   }
 
   Future<void> _editShift(Shift shift) async {
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ShiftFormPage(shift: shift),
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.zero,
+      barrierColor: Colors.black54,
+      child: ShiftForm(
+        shift: shift,
+        onSaved: () {
+          _loadShiftsWithCache(_selectedDate);
+        },
+        showAppBar: false,
       ),
     );
-    
-    if (result == true) {
-      _loadShiftForDate(_selectedDate);
-    }
   }
 
 }
