@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../core/services/theme_service.dart';
 import '../../data/models/task_model.dart';
+import 'dart:html' as html;
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -158,10 +160,13 @@ class TaskCard extends StatelessWidget {
                   
                   if (task.tickets.isNotEmpty) ...[
                     const SizedBox(width: 8),
-                    _buildInfoChip(
-                      context,
-                      '${task.tickets.length} tickets',
-                      CupertinoIcons.ticket,
+                    GestureDetector(
+                      onTap: () => TaskCard.openTicketLink(task.tickets.first),
+                      child: _buildInfoChip(
+                        context,
+                        '${task.tickets.length} tickets',
+                        CupertinoIcons.ticket,
+                      ),
                     ),
                   ],
                 ],
@@ -239,6 +244,17 @@ class TaskCard extends StatelessWidget {
         return Colors.orange;
       case TaskType.custom:
         return Colors.purple;
+    }
+  }
+
+  static void openTicketLink(String ticket) {
+    if (kIsWeb) {
+      // Формируем полный URL
+      String url = ticket;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url';
+      }
+      html.window.open(url, '_blank');
     }
   }
 }

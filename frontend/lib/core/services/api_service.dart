@@ -753,5 +753,25 @@ class ApiService {
     }
   }
 
+  // GeoJSON decoder API method
+  static Future<List<String>> decodeGeojson(Map<String, dynamic> geojson) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/geojson/decode'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'geojson': geojson}),
+      );
 
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+        return List<String>.from(json['tickets']);
+      } else {
+        throw Exception('Failed to decode GeoJSON: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error decoding GeoJSON: $e');
+    }
+  }
 }

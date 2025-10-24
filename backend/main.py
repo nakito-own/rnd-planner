@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import dashboards, tables, shifts, crews, tg_scenarios, robots, transport, tasks
+from app.routers import dashboards, tables, shifts, crews, tg_scenarios, robots, transport, tasks, geojson_decoder
 
 app = FastAPI(
     title="R&D Planner API",
@@ -22,6 +22,7 @@ app.include_router(robots.router, prefix="/api/v1/robots", tags=["robots"])
 app.include_router(transport.router, prefix="/api/v1/transport", tags=["transport"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
 app.include_router(tg_scenarios.router, prefix="/api/v1/tg-scenarios", tags=["tg-scenarios"])
+app.include_router(geojson_decoder.router, prefix="/api/v1/geojson", tags=["geojson"])
 
 @app.get("/")
 async def root():

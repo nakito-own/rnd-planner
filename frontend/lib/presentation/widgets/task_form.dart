@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import '../../core/services/theme_service.dart';
@@ -10,6 +10,9 @@ import '../../data/models/employee_model.dart';
 import '../../data/models/robot_model.dart';
 import '../../data/models/transport_model.dart';
 import '../../data/models/task_model.dart';
+
+// Import for web URL opening
+import 'dart:html' as html;
 
 class TaskForm extends StatefulWidget {
   final Task? task; 
@@ -279,6 +282,17 @@ class _TaskFormState extends State<TaskForm> {
     });
   }
 
+  void _openTicketLink(String ticket) {
+    if (kIsWeb) {
+      // Формируем полный URL
+      String url = ticket;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://$url';
+      }
+      html.window.open(url, '_blank');
+    }
+  }
+
   IconData _getTaskTypeIcon(TaskType type) {
     switch (type) {
       case TaskType.route:
@@ -416,6 +430,34 @@ class _TaskFormState extends State<TaskForm> {
                   backgroundColor: Colors.green,
                 ),
               );
+            }
+            
+            // Отправляем GeoJSON на сервер для извлечения тикетов
+            try {
+              final tickets = await ApiService.decodeGeojson(jsonData);
+              
+              if (mounted && tickets.isNotEmpty) {
+                setState(() {
+                  // Добавляем найденные тикеты в список
+                  for (final ticket in tickets) {
+                    if (!_tickets.contains(ticket)) {
+                      _tickets.add(ticket);
+                    }
+                  }
+                });
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Found ${tickets.length} ticket(s) in GeoJSON'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                debugPrint('Error decoding GeoJSON: $e');
+                // Не показываем ошибку пользователю, так как GeoJSON уже загружен
+              }
             }
           } else {
             if (mounted) {
@@ -1208,10 +1250,14 @@ class _TaskFormState extends State<TaskForm> {
               spacing: 8,
               runSpacing: 8,
               children: _tickets.map((ticket) {
-                return Chip(
-                  label: Text(ticket),
-                  deleteIcon: const Icon(CupertinoIcons.xmark, size: 16),
-                  onDeleted: () => _removeTicket(ticket),
+                return InkWell(
+                  onTap: () => _openTicketLink(ticket),
+                  borderRadius: BorderRadius.circular(16),
+                  child: Chip(
+                    label: Text(ticket),
+                    deleteIcon: const Icon(CupertinoIcons.xmark, size: 16),
+                    onDeleted: () => _removeTicket(ticket),
+                  ),
                 );
               }).toList(),
             ),
