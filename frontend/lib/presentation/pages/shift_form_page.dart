@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import '../../core/services/theme_service.dart';
 import '../../core/services/api_service.dart';
 import '../../data/models/shift_model.dart';
-import '../../data/models/task_model.dart';
-import '../widgets/task_form_widget.dart';
+import '../widgets/task_form.dart';
+import '../widgets/side_sheet.dart';
 
 class ShiftFormPage extends StatefulWidget {
   final Shift? shift;
@@ -223,36 +223,30 @@ class _ShiftFormPageState extends State<ShiftFormPage> {
         Navigator.pop(context, true); 
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error saving: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error saving: $e';
+        });
+      }
     }
   }
 
   Future<void> _createTask() async {
     if (widget.shift == null) return;
 
-    final result = await Navigator.push<Task>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TaskFormWidget(
-          shiftId: widget.shift!.id,
-          onTaskCreated: (task) {
-           
-          },
-        ),
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      barrierColor: Colors.black54,
+      child: TaskForm(
+        shiftId: widget.shift!.id,
+        onSaved: () {
+          // Task will be created and saved automatically
+        },
+        showAppBar: false,
       ),
     );
-
-    if (result != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Task successfully created'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
   }
 
   @override

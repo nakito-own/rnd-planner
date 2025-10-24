@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
-from app.models.database_models import Shift, Task, Employee, Transport
+from app.models.database_models import Shift, Task, Employee, Transport, Robots
 from app.models.schemas import ShiftCreate, ShiftUpdate
 from typing import List, Optional
 from datetime import datetime
@@ -14,7 +14,7 @@ def get_shift_with_tasks(db: Session, shift_id: int) -> Optional[Shift]:
         joinedload(Shift.tasks).joinedload(Task.transport_rel)
     ).filter(Shift.id == shift_id).first()
 
-def enrich_task_data(task: Task) -> dict:
+def enrich_task_data(task: Task, db: Session) -> dict:
     """Обогатить данные задачи дополнительной информацией"""
     task_data = {
         'id': task.id,
@@ -46,6 +46,11 @@ def enrich_task_data(task: Task) -> dict:
         transport = task.transport_rel
         task_data['transport_name'] = transport.name
         task_data['transport_gov_number'] = transport.gov_number
+    
+    # Получаем имя робота по его ID
+    robot = db.query(Robots).filter(Robots.id == task.robot_name).first()
+    if robot:
+        task_data['robot_name'] = robot.name
     
     return task_data
 

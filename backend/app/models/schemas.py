@@ -293,7 +293,7 @@ class Shift(ShiftBase):
 class TaskForShift(BaseModel):
     id: int
     executor: int
-    robot_name: int
+    robot_name: Optional[int] = None
     transport_id: Optional[int] = None
     time_start: datetime
     time_end: datetime
@@ -323,7 +323,7 @@ class ShiftWithTasks(ShiftBase):
 class EnrichedTaskForShift(BaseModel):
     id: int
     executor: int
-    robot_name: int
+    robot_name: Optional[int] = None
     transport_id: Optional[int] = None
     time_start: datetime
     time_end: datetime
@@ -352,7 +352,7 @@ class ShiftWithEnrichedTasks(ShiftBase):
 class TaskBase(BaseModel):
     shift_id: int = Field(..., description="ID смены, к которой привязана задача")
     executor: int = Field(..., description="ID сотрудника исполнителя")
-    robot_name: int = Field(..., description="Номер робота")
+    robot_name: Optional[int] = Field(None, description="Номер робота")
     transport_id: Optional[int] = Field(None, description="ID выделенного для задачи транспорта")
     time_start: datetime = Field(..., description="Время начала задачи")
     time_end: datetime = Field(..., description="Время окончания задачи")

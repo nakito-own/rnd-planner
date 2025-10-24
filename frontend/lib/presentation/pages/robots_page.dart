@@ -23,7 +23,6 @@ class _RobotsPageState extends State<RobotsPage> {
   int? _selectedSeries;
   bool _blockersFilter = false;
   
-  // Поиск по имени
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchVisible = false;
   
@@ -72,7 +71,6 @@ class _RobotsPageState extends State<RobotsPage> {
   void _applyFilters() {
     setState(() {
       _robots = _allRobots.where((robot) {
-        // Поиск по имени
         if (_searchController.text.isNotEmpty) {
           final searchText = _searchController.text.toLowerCase();
           final robotName = robot.displayName.toLowerCase();
@@ -369,7 +367,6 @@ class _RobotsPageState extends State<RobotsPage> {
                     width: 40,
                     height: 40,
                     errorBuilder: (context, error, stackTrace) {
-                      // Fallback to CircleAvatar with text if image is missing
                       return CircleAvatar(
                         backgroundColor: Colors.blue,
                         child: Text(
@@ -449,10 +446,10 @@ class _RobotsPageState extends State<RobotsPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          color: Theme.of(context).dividerColor,
         ),
         boxShadow: [
           BoxShadow(

@@ -24,12 +24,12 @@ class Shift {
   factory Shift.fromJson(Map<String, dynamic> json) {
     return Shift(
       id: json['id'] as int,
-      date: DateTime.parse(json['date'] as String),
-      timeStart: DateTime.parse(json['time_start'] as String),
-      timeEnd: DateTime.parse(json['time_end'] as String),
-      editedAt: DateTime.parse(json['edited_at'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      date: DateTime.parse(json['date'] as String? ?? DateTime.now().toIso8601String()),
+      timeStart: DateTime.parse(json['time_start'] as String? ?? DateTime.now().toIso8601String()),
+      timeEnd: DateTime.parse(json['time_end'] as String? ?? DateTime.now().toIso8601String()),
+      editedAt: DateTime.parse(json['edited_at'] as String? ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
       tasks: (json['tasks'] as List<dynamic>?)
           ?.map((taskJson) => Task.fromJson(taskJson as Map<String, dynamic>))
           .toList() ?? [],

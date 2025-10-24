@@ -55,7 +55,15 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       themeMode: ThemeService.currentTheme,
-      home: const MainPage(),
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        // For now, just return MainPage for all routes
+        // In the future, you can add a proper routes map here
+        return MaterialPageRoute(
+          builder: (context) => const MainPage(),
+          settings: const RouteSettings(name: '/'),
+        );
+      },
     );
   }
 }

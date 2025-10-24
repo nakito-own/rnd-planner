@@ -33,7 +33,7 @@ async def get_shift(shift_id: int, db: Session = Depends(get_db)):
     # Обогащаем данные задач
     enriched_tasks = []
     for task in shift.tasks:
-        enriched_task_data = shift_crud.enrich_task_data(task)
+        enriched_task_data = shift_crud.enrich_task_data(task, db)
         enriched_task = EnrichedTaskForShift(**enriched_task_data)
         enriched_tasks.append(enriched_task)
     
@@ -93,7 +93,7 @@ async def get_shifts_by_date(date: datetime, db: Session = Depends(get_db)):
                 # Обогащаем данные задач
                 enriched_tasks = []
                 for task in shift_with_tasks.tasks:
-                    enriched_task_data = shift_crud.enrich_task_data(task)
+                    enriched_task_data = shift_crud.enrich_task_data(task, db)
                     enriched_task = EnrichedTaskForShift(**enriched_task_data)
                     enriched_tasks.append(enriched_task)
                 

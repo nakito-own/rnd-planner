@@ -2,19 +2,78 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../core/services/theme_service.dart';
 import '../../data/models/shift_model.dart';
+import '../../data/models/task_model.dart';
 import 'task_card.dart';
+import 'task_form.dart';
+import 'side_sheet.dart';
 
-class ShiftCard extends StatelessWidget {
+class ShiftCard extends StatefulWidget {
   final Shift shift;
   final VoidCallback? onTap;
   final VoidCallback? onEdit;
+  final VoidCallback? onTaskUpdated;
 
   const ShiftCard({
     super.key,
     required this.shift,
     this.onTap,
     this.onEdit,
+    this.onTaskUpdated,
   });
+
+  @override
+  State<ShiftCard> createState() => _ShiftCardState();
+}
+
+class _ShiftCardState extends State<ShiftCard> {
+  late Shift _currentShift;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentShift = widget.shift;
+  }
+
+  @override
+  void didUpdateWidget(ShiftCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.shift != oldWidget.shift) {
+      _currentShift = widget.shift;
+    }
+  }
+
+
+  void _editTask(Task task) {
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      barrierColor: Colors.black54,
+      child: TaskForm(
+        task: task,
+        onSaved: () {
+          // Reload the shift data to get updated task information
+          widget.onTaskUpdated?.call();
+        },
+        showAppBar: false,
+      ),
+    );
+  }
+
+  void _addNewTask() {
+    showAppSideSheet(
+      context: context,
+      width: 520,
+      barrierColor: Colors.black54,
+      child: TaskForm(
+        shiftId: _currentShift.id,
+        onSaved: () {
+          // Reload the shift data to get updated task information
+          widget.onTaskUpdated?.call();
+        },
+        showAppBar: false,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +84,7 @@ class ShiftCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -40,7 +99,7 @@ class ShiftCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Shift ${shift.date}',
+                      'Shift ${_currentShift.date}',
                       style: ThemeService.captionStyle.copyWith(
                         color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                         fontWeight: FontWeight.w600,
@@ -49,17 +108,17 @@ class ShiftCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   Text(
-                    shift.formattedDate,
+                    _currentShift.formattedDate,
                     style: ThemeService.bodyStyle.copyWith(
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                   ),
-                  if (onEdit != null) ...[
+                  if (widget.onEdit != null) ...[
                     const SizedBox(width: 8),
                     IconButton(
-                      onPressed: onEdit,
-                      icon: const Icon(CupertinoIcons.pencil),
+                      onPressed: widget.onEdit,
+                      icon: const Icon(CupertinoIcons.pencil_circle),
                       iconSize: 18,
                       tooltip: 'Edit shift',
                     ),
@@ -78,7 +137,7 @@ class ShiftCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    shift.formattedTimeRange,
+                    _currentShift.formattedTimeRange,
                     style: ThemeService.bodyStyle.copyWith(
                       fontWeight: FontWeight.w500,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
@@ -92,7 +151,7 @@ class ShiftCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    shift.formattedDuration,
+                    _currentShift.formattedDuration,
                     style: ThemeService.captionStyle.copyWith(
                       color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                     ),
@@ -107,39 +166,94 @@ class ShiftCard extends StatelessWidget {
                   _buildStatItem(
                     context,
                     'Tasks',
-                    shift.tasks.length.toString(),
+                    _currentShift.tasks.length.toString(),
                     CupertinoIcons.list_bullet,
                   ),
                   const SizedBox(width: 24),
                   _buildStatItem(
                     context,
                     'Robots',
-                    shift.tasks.where((t) => t.robotName != null).map((t) => t.robotName!).toSet().length.toString(),
+                    _currentShift.tasks.where((t) => t.robotName != null).map((t) => t.robotName!).toSet().length.toString(),
                     CupertinoIcons.cube_box,
                   ),
                   const SizedBox(width: 24),
                   _buildStatItem(
                     context,
                     'Executors',
-                    shift.tasks.where((t) => t.executor != null).map((t) => t.executor!).toSet().length.toString(),
+                    _currentShift.tasks.where((t) => t.executor != null).map((t) => t.executor!).toSet().length.toString(),
                     CupertinoIcons.person_2,
                   ),
                 ],
               ),
               
-              if (shift.tasks.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 12),
-                Text(
-                  'Tasks of shift',
-                  style: ThemeService.subheadingStyle,
-                ),
-                const SizedBox(height: 12),
-                ...shift.tasks.map((task) => Padding(
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    'Tasks of shift',
+                    style: ThemeService.subheadingStyle,
+                  ),
+                  const Spacer(),
+                  ElevatedButton.icon(
+                    onPressed: _addNewTask,
+                    icon: const Icon(CupertinoIcons.add_circled, size: 16),
+                    label: const Text('Add Task'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_currentShift.tasks.isNotEmpty) ...[
+                ..._currentShift.tasks.map((task) => Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: TaskCard(task: task),
+                  child: TaskCard(
+                    task: task,
+                    onEdit: () => _editTask(task),
+                  ),
                 )),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        CupertinoIcons.list_bullet,
+                        size: 32,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.3),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No tasks yet',
+                        style: ThemeService.bodyStyle.copyWith(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Add your first task to get started',
+                        style: ThemeService.captionStyle.copyWith(
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),

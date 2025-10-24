@@ -11,13 +11,13 @@ if [ -z "$SERVICE" ]; then
     docker compose logs -f
 else
     echo "📊 Logs for service: $SERVICE"
-    case $SERVICE in
-        "backend"|"mysql")
+        case $SERVICE in
+        "backend"|"mysql"|"frontend")
             docker compose logs -f $SERVICE
             ;;
         *)
             echo "❌ Unknown service: $SERVICE"
-            echo "Available services: backend, mysql"
+            echo "Available services: backend, mysql, frontend"
             exit 1
             ;;
     esac

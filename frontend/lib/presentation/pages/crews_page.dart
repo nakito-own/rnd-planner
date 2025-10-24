@@ -47,6 +47,8 @@ class _CrewsPageState extends State<CrewsPage> {
   }
 
   Future<void> _loadEmployees() async {
+    if (!mounted) return;
+    
     try {
       setState(() {
         _isLoading = true;
@@ -54,35 +56,41 @@ class _CrewsPageState extends State<CrewsPage> {
       });
 
       final employees = await ApiService.getEmployees();
-      setState(() {
-        _allEmployees = employees;
-        _employees = employees;
-        
-        _availableBodies = employees
-            .where((e) => e.body != null && e.body!.isNotEmpty)
-            .map((e) => e.body!)
-            .toSet()
-            .toList()
-          ..sort();
-            
-        _availableCrewIds = employees
-            .where((e) => e.crew != null)
-            .map((e) => e.crew!)
-            .toSet()
-            .toList()
-          ..sort();
-        
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _allEmployees = employees;
+          _employees = employees;
+          
+          _availableBodies = employees
+              .where((e) => e.body != null && e.body!.isNotEmpty)
+              .map((e) => e.body!)
+              .toSet()
+              .toList()
+            ..sort();
+              
+          _availableCrewIds = employees
+              .where((e) => e.crew != null)
+              .map((e) => e.crew!)
+              .toSet()
+              .toList()
+            ..sort();
+          
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _applyFilters() {
+    if (!mounted) return;
+    
     setState(() {
       _employees = _allEmployees.where((employee) {
         // Поиск по ФИО
@@ -533,10 +541,10 @@ class _CrewsPageState extends State<CrewsPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          color: Theme.of(context).dividerColor,
         ),
         boxShadow: [
           BoxShadow(

@@ -6,8 +6,6 @@ RUN apt-get update && apt-get install -y \
     gcc \
     default-libmysqlclient-dev \
     pkg-config \
-    nginx \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем рабочую директорию
@@ -22,20 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копируем весь код приложения
 COPY . .
 
-# Создаем директории для Nginx
-RUN mkdir -p /var/www/html /var/log/nginx /var/run/nginx
+# Открываем порт для FastAPI
+EXPOSE 8000
 
-# Копируем конфигурацию Nginx
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Копируем конфигурацию Supervisor
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Создаем директорию для статических файлов Flutter
-RUN mkdir -p /var/www/html
-
-# Открываем порты
-EXPOSE 80 8000
-
-# Команда запуска через Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Команда запуска FastAPI
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

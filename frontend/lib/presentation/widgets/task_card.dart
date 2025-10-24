@@ -6,11 +6,13 @@ import '../../data/models/task_model.dart';
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
   const TaskCard({
     super.key,
     required this.task,
     this.onTap,
+    this.onEdit,
   });
 
   @override
@@ -62,13 +64,15 @@ class TaskCard extends StatelessWidget {
                           style: ThemeService.bodyStyle.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          task.robotName != null ? 'Robot A${task.robotName}' : 'Robot not assigned',
+                          task.robotName != null ? 'Robot #${task.robotName}' : 'Robot not assigned',
                           style: ThemeService.captionStyle.copyWith(
                             color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                         if (task.executorName != null) ...[
                           const SizedBox(height: 2),
@@ -78,6 +82,7 @@ class TaskCard extends StatelessWidget {
                               color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                               fontWeight: FontWeight.w500,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ],
@@ -87,11 +92,30 @@ class TaskCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        task.formattedTimeRange,
-                        style: ThemeService.captionStyle.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            task.formattedTimeRange,
+                            style: ThemeService.captionStyle.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (onEdit != null) ...[
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: onEdit,
+                              icon: const Icon(CupertinoIcons.pencil_circle),
+                              iconSize: 16,
+                              tooltip: 'Edit task',
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 24,
+                                minHeight: 24,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       Text(
                         task.formattedDuration,

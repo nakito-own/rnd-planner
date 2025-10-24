@@ -21,8 +21,8 @@ class Robot {
       name: json['name'] as int,
       series: json['series'] as int,
       hasBlockers: json['has_blockers'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
     );
   }
 

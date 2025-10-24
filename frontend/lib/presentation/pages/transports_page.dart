@@ -25,7 +25,6 @@ class _TransportsPageState extends State<TransportsPage> {
   bool _autoVcFilter = false;
   bool _hasBlockersFilter = false;
   
-  // Поиск по названию
   final TextEditingController _searchController = TextEditingController();
   bool _isSearchVisible = false;
 
@@ -65,7 +64,6 @@ class _TransportsPageState extends State<TransportsPage> {
   void _applyFilters() {
     setState(() {
       _transports = _allTransports.where((transport) {
-        // Поиск по названию
         if (_searchController.text.isNotEmpty) {
           final searchText = _searchController.text.toLowerCase();
           final name = transport.name.toLowerCase();
@@ -454,10 +452,10 @@ class _TransportsPageState extends State<TransportsPage> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[900] : Colors.grey[50],
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+          color: Theme.of(context).dividerColor,
         ),
         boxShadow: [
           BoxShadow(

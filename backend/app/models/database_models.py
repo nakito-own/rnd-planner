@@ -92,7 +92,7 @@ class Task(Base):
     id = Column(Integer, primary_key=True, index=True)
     shift_id = Column(Integer, ForeignKey("shifts.id"), nullable=False)
     executor = Column(Integer, ForeignKey("employees.id"), nullable=False)
-    robot_name = Column(Integer, nullable=False)
+    robot_name = Column(Integer, nullable=True)
     transport_id = Column(Integer, ForeignKey("transports.id"), nullable=True)
     time_start = Column(DateTime(timezone=True), nullable=False)
     time_end = Column(DateTime(timezone=True), nullable=False)

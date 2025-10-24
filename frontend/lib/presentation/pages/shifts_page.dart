@@ -27,6 +27,8 @@ class _ShiftsPageState extends State<ShiftsPage> {
   }
 
   Future<void> _loadShiftForDate(DateTime date) async {
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -37,23 +39,29 @@ class _ShiftsPageState extends State<ShiftsPage> {
       // First check server connection
       final isConnected = await ApiService.testConnection();
       if (!isConnected) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'Unable to connect to server. Make sure the backend is running on http://localhost:8000';
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Unable to connect to server. Make sure the backend is running on http://localhost:8000';
+          });
+        }
         return;
       }
 
       final shift = await ApiService.getShiftByDate(date);
-      setState(() {
-        _currentShift = shift;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _currentShift = shift;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error loading shift: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error loading shift: $e';
+        });
+      }
     }
   }
 
@@ -275,6 +283,13 @@ class _ShiftsPageState extends State<ShiftsPage> {
                 // TODO: Add navigation to detailed shift page
               },
               onEdit: () => _editShift(_currentShift!),
+              onTaskUpdated: () async {
+                // Add a small delay to ensure the task is fully created on the server
+                await Future.delayed(const Duration(milliseconds: 500));
+                if (mounted) {
+                  _loadShiftForDate(_selectedDate);
+                }
+              },
             ),
           ],
         ),

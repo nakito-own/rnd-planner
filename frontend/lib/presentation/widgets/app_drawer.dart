@@ -15,6 +15,19 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Detect the current route
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    
+    // List of routes for comparison (using named routes)
+    final isMainPage = currentRoute == '/' || currentRoute.isEmpty;
+    final isDashboardsPage = currentRoute == '/dashboards';
+    final isShiftsPage = currentRoute == '/shifts';
+    final isTablesPage = currentRoute == '/tables';
+    final isCrewsPage = currentRoute == '/crews';
+    final isRobotsPage = currentRoute == '/robots';
+    final isTransportsPage = currentRoute == '/transports';
+    final isTgScenariosPage = currentRoute == '/tg_scenarios';
+    
     return Drawer(
       backgroundColor: Colors.transparent,
       child: ListView(
@@ -25,11 +38,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.house_fill,
             title: 'Main page',
+            isActive: isMainPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const MainPage()),
+                MaterialPageRoute(
+                  builder: (context) => const MainPage(),
+                  settings: const RouteSettings(name: '/'),
+                ),
               );
             },
           ),
@@ -37,11 +54,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.chart_bar_alt_fill,
             title: 'Dashboards',
+            isActive: isDashboardsPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const DashboardsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const DashboardsPage(),
+                  settings: const RouteSettings(name: '/dashboards'),
+                ),
               );
             },
           ),
@@ -49,11 +70,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.time_solid,
             title: 'Shifts',
+            isActive: isShiftsPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const ShiftsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const ShiftsPage(),
+                  settings: const RouteSettings(name: '/shifts'),
+                ),
               );
             },
           ),
@@ -61,11 +86,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.table_fill,
             title: 'Tables',
+            isActive: isTablesPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const TablesPage()),
+                MaterialPageRoute(
+                  builder: (context) => const TablesPage(),
+                  settings: const RouteSettings(name: '/tables'),
+                ),
               );
             },
           ),
@@ -73,11 +102,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.group_solid,
             title: 'Crews',
+            isActive: isCrewsPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const CrewsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const CrewsPage(),
+                  settings: const RouteSettings(name: '/crews'),
+                ),
               );
             },
           ),
@@ -86,11 +119,15 @@ class AppDrawer extends StatelessWidget {
             icon: CupertinoIcons.square_stack_3d_up,
             title: 'Robots',
             pngIcon: 'assets/images/robot_icon.png',
+            isActive: isRobotsPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const RobotsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const RobotsPage(),
+                  settings: const RouteSettings(name: '/robots'),
+                ),
               );
             },
           ),
@@ -98,11 +135,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.car,
             title: 'Transports',
+            isActive: isTransportsPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const TransportsPage()),
+                MaterialPageRoute(
+                  builder: (context) => const TransportsPage(),
+                  settings: const RouteSettings(name: '/transports'),
+                ),
               );
             },
           ),
@@ -110,11 +151,15 @@ class AppDrawer extends StatelessWidget {
             context,
             icon: CupertinoIcons.chat_bubble_2_fill,
             title: 'TG Scenarios',
+            isActive: isTgScenariosPage,
             onTap: () {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const TgScenariosPage()),
+                MaterialPageRoute(
+                  builder: (context) => const TgScenariosPage(),
+                  settings: const RouteSettings(name: '/tg_scenarios'),
+                ),
               );
             },
           ),
@@ -129,64 +174,79 @@ class AppDrawer extends StatelessWidget {
     required String title,
     required VoidCallback onTap,
     String? pngIcon,
+    bool isActive = false,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final surfaceColor = colorScheme.surface;
     final surfaceVariant = colorScheme.surfaceVariant;
+    
+    // Get theme colors
+    final primaryColor = colorScheme.primary;
+    final textColor = Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black;
     
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
-        elevation: 1,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                pngIcon != null
-                    ? ColorFiltered(
-                        colorFilter: ColorFilter.mode(
-                          Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                          BlendMode.srcIn,
+        elevation: isActive ? 2 : 1,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: isActive 
+                ? Border.all(color: primaryColor, width: 2)
+                : null,
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  pngIcon != null
+                      ? ColorFiltered(
+                          colorFilter: ColorFilter.mode(
+                            isActive ? primaryColor : textColor,
+                            BlendMode.srcIn,
+                          ),
+                          child: Image.asset(
+                            pngIcon,
+                            width: 24,
+                            height: 24,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                icon,
+                                color: isActive ? primaryColor : textColor,
+                                size: 24,
+                              );
+                            },
+                          ),
+                        )
+                      : Icon(
+                          icon,
+                          color: isActive ? primaryColor : textColor,
+                          size: 24,
                         ),
-                        child: Image.asset(
-                          pngIcon,
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              icon,
-                              color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                              size: 24,
-                            );
-                          },
-                        ),
-                      )
-                    : Icon(
-                        icon,
-                        color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                        size: 24,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: ThemeService.bodyStyle.copyWith(
+                        color: isActive ? primaryColor : textColor,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                       ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: ThemeService.bodyStyle.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-                Icon(
-                  CupertinoIcons.chevron_right,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.black.withOpacity(0.6),
-                  size: 16,
-                ),
-              ],
+                  Icon(
+                    CupertinoIcons.chevron_right,
+                    color: isActive 
+                        ? primaryColor 
+                        : colorScheme.outline,
+                    size: 16,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

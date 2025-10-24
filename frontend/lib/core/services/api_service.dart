@@ -7,7 +7,7 @@ import '../../data/models/shift_model.dart';
 import '../../data/models/task_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.3.3:8000/api/v1';
+  static const String baseUrl = 'http://192.168.3.3:8002/api/v1';
   
   static Future<List<Employee>> getEmployees({
     int skip = 0,
@@ -726,6 +726,30 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Error deleting task: $e');
+    }
+  }
+
+  // Get tasks for a specific shift
+  static Future<List<Task>> getTasksForShift(int shiftId) async {
+    try {
+      final url = '$baseUrl/tasks?shift_id=$shiftId';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        final tasks = jsonList.map((json) => Task.fromJson(json)).toList();
+        return tasks;
+      } else {
+        throw Exception('Failed to load tasks for shift: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error loading tasks for shift: $e');
     }
   }
 
