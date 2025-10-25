@@ -463,8 +463,6 @@ class _ShiftsPageState extends State<ShiftsPage> {
     showAppSideSheet(
       context: context,
       width: 520,
-      margin: EdgeInsets.zero,
-      borderRadius: BorderRadius.zero,
       barrierColor: Colors.black54,
       child: ShiftForm(
         initialDate: _selectedDate,
@@ -480,8 +478,6 @@ class _ShiftsPageState extends State<ShiftsPage> {
     showAppSideSheet(
       context: context,
       width: 520,
-      margin: EdgeInsets.zero,
-      borderRadius: BorderRadius.zero,
       barrierColor: Colors.black54,
       child: ShiftForm(
         shift: shift,
