@@ -7,7 +7,7 @@ import '../../data/models/shift_model.dart';
 import '../../data/models/task_model.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.3.3:8002/api/v1';
+  static const String baseUrl = 'http://localhost:8000/api/v1';
   
   static Future<List<Employee>> getEmployees({
     int skip = 0,

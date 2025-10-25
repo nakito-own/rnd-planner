@@ -25,6 +25,7 @@ def enrich_task_data(task: Task, db: Session) -> dict:
         'time_end': task.time_end,
         'type': task.type,
         'geojson': task.geojson,
+        'geojson_filename': task.geojson_filename,
         'tickets': task.tickets,
         'created_at': task.created_at,
         'updated_at': task.updated_at,

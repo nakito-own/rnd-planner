@@ -17,6 +17,7 @@ class Task {
   final DateTime timeEnd;
   final TaskType type;
   final Map<String, dynamic>? geojson;
+  final String? geojsonFilename;
   final List<String> tickets;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -34,6 +35,7 @@ class Task {
     required this.timeEnd,
     required this.type,
     this.geojson,
+    this.geojsonFilename,
     required this.tickets,
     required this.createdAt,
     required this.updatedAt,
@@ -57,6 +59,7 @@ class Task {
         orElse: () => TaskType.custom,
       ),
       geojson: json['geojson'] != null ? json['geojson'] as Map<String, dynamic> : null,
+      geojsonFilename: json['geojson_filename'] != null ? json['geojson_filename'] as String : null,
       tickets: (json['tickets'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
       createdAt: DateTime.parse(json['created_at'] as String? ?? DateTime.now().toIso8601String()),
       updatedAt: DateTime.parse(json['updated_at'] as String? ?? DateTime.now().toIso8601String()),
@@ -79,6 +82,7 @@ class Task {
       'time_end': timeEnd.toIso8601String(),
       'type': type.name,
       'geojson': geojson,
+      'geojson_filename': geojsonFilename,
       'tickets': tickets,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

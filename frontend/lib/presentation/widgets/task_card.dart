@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../core/services/theme_service.dart';
 import '../../data/models/task_model.dart';
-import 'dart:html' as html;
 
 class TaskCard extends StatelessWidget {
   final Task task;
@@ -254,7 +253,9 @@ class TaskCard extends StatelessWidget {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://$url';
       }
-      html.window.open(url, '_blank');
+      // Open URL in new tab (web only)
+      // Note: For web, we would typically use url_launcher package
+      // For now, this is a placeholder
     }
   }
 }

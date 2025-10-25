@@ -98,6 +98,7 @@ class Task(Base):
     time_end = Column(DateTime(timezone=True), nullable=False)
     type = Column(SQLEnum(TaskType), nullable=False)
     geojson = Column(JSON, nullable=True)
+    geojson_filename = Column(String(500), nullable=True)
     tickets = Column(JSON, nullable=False)  # Список ссылок на сторонние ресурсы
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

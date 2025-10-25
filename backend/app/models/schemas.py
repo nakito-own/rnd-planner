@@ -299,6 +299,7 @@ class TaskForShift(BaseModel):
     time_end: datetime
     type: TaskType
     geojson: Optional[Dict[str, Any]] = None
+    geojson_filename: Optional[str] = None
     tickets: List[str]
     created_at: datetime
     updated_at: datetime
@@ -329,6 +330,7 @@ class EnrichedTaskForShift(BaseModel):
     time_end: datetime
     type: TaskType
     geojson: Optional[Dict[str, Any]] = None
+    geojson_filename: Optional[str] = None
     tickets: List[str]
     created_at: datetime
     updated_at: datetime
@@ -358,6 +360,7 @@ class TaskBase(BaseModel):
     time_end: datetime = Field(..., description="Время окончания задачи")
     type: TaskType = Field(..., description="Тип задачи")
     geojson: Optional[Dict[str, Any]] = Field(None, description="GeoJSON данные для маршрута")
+    geojson_filename: Optional[str] = Field(None, description="Имя загруженного GeoJSON файла")
     tickets: List[str] = Field(..., description="Ссылки на сторонний ресурс")
 
     @validator('geojson')
@@ -385,6 +388,7 @@ class TaskUpdate(BaseModel):
     time_end: Optional[datetime] = None
     type: Optional[TaskType] = None
     geojson: Optional[Dict[str, Any]] = None
+    geojson_filename: Optional[str] = None
     tickets: Optional[List[str]] = None
 
 class Task(TaskBase):

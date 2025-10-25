@@ -11,9 +11,6 @@ import '../../data/models/robot_model.dart';
 import '../../data/models/transport_model.dart';
 import '../../data/models/task_model.dart';
 
-// Import for web URL opening
-import 'dart:html' as html;
-
 class TaskForm extends StatefulWidget {
   final Task? task; 
   final int? shiftId; 
@@ -45,6 +42,7 @@ class _TaskFormState extends State<TaskForm> {
   Transport? _selectedTransport;
   TaskType _selectedTaskType = TaskType.route;
   Map<String, dynamic>? _geojsonData;
+  String? _geojsonFilename;
   final List<String> _tickets = [];
 
   bool _isLoading = false;
@@ -80,6 +78,7 @@ class _TaskFormState extends State<TaskForm> {
     );
     _selectedTaskType = task.type;
     _geojsonData = task.geojson;
+    _geojsonFilename = task.geojsonFilename;
     _tickets.addAll(task.tickets);
     _updateControllers();
   }
@@ -289,7 +288,9 @@ class _TaskFormState extends State<TaskForm> {
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://$url';
       }
-      html.window.open(url, '_blank');
+      // Open URL in new tab (web only)
+      // Note: For web, we would typically use url_launcher package
+      // For now, this is a placeholder
     }
   }
 
@@ -414,49 +415,33 @@ class _TaskFormState extends State<TaskForm> {
       );
 
       if (result != null && result.files.single.bytes != null) {
+        final fileName = result.files.single.name;
         final content = utf8.decode(result.files.single.bytes!);
         
         try {
           final jsonData = json.decode(content);
           if (jsonData is Map<String, dynamic>) {
-            setState(() {
-              _geojsonData = jsonData;
-            });
-            
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('GeoJSON file loaded successfully'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            }
-            
             // Отправляем GeoJSON на сервер для извлечения тикетов
             try {
               final tickets = await ApiService.decodeGeojson(jsonData);
               
-              if (mounted && tickets.isNotEmpty) {
+              if (mounted) {
                 setState(() {
+                  _geojsonData = jsonData;
+                  _geojsonFilename = fileName;
                   // Добавляем найденные тикеты в список
-                  for (final ticket in tickets) {
-                    if (!_tickets.contains(ticket)) {
-                      _tickets.add(ticket);
-                    }
-                  }
+                  _tickets.clear();
+                  _tickets.addAll(tickets);
                 });
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Found ${tickets.length} ticket(s) in GeoJSON'),
-                    backgroundColor: Colors.blue,
-                  ),
-                );
               }
             } catch (e) {
               if (mounted) {
                 debugPrint('Error decoding GeoJSON: $e');
-                // Не показываем ошибку пользователю, так как GeoJSON уже загружен
+                // Устанавливаем GeoJSON даже если не удалось декодировать тикеты
+                setState(() {
+                  _geojsonData = jsonData;
+                  _geojsonFilename = fileName;
+                });
               }
             }
           } else {
@@ -490,6 +475,14 @@ class _TaskFormState extends State<TaskForm> {
         );
       }
     }
+  }
+
+  void _removeGeojsonFile() {
+    setState(() {
+      _geojsonData = null;
+      _geojsonFilename = null;
+      _tickets.clear();
+    });
   }
 
   Future<void> _saveTask() async {
@@ -601,6 +594,9 @@ class _TaskFormState extends State<TaskForm> {
         if (widget.task!.geojson != _geojsonData) {
           taskData['geojson'] = _geojsonData;
         }
+        if (widget.task!.geojsonFilename != _geojsonFilename) {
+          taskData['geojson_filename'] = _geojsonFilename;
+        }
         if (widget.task!.tickets.toString() != _tickets.toString()) {
           taskData['tickets'] = _tickets;
         }
@@ -613,6 +609,7 @@ class _TaskFormState extends State<TaskForm> {
         taskData['time_end'] = endDateTime.toIso8601String();
         taskData['type'] = _selectedTaskType.name;
         taskData['geojson'] = _geojsonData;
+        taskData['geojson_filename'] = _geojsonFilename;
         taskData['tickets'] = _tickets;
       }
 
@@ -1095,6 +1092,7 @@ class _TaskFormState extends State<TaskForm> {
             _selectedTaskType = value!;
             if (value != TaskType.route) {
               _geojsonData = null;
+              _geojsonFilename = null;
             }
           });
         },
@@ -1129,14 +1127,41 @@ class _TaskFormState extends State<TaskForm> {
                 const Icon(CupertinoIcons.map, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    _geojsonData != null ? 'GeoJSON loaded' : 'Click to load GeoJSON',
-                    style: ThemeService.bodyStyle,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _geojsonData != null ? 'GeoJSON loaded' : 'Click to load GeoJSON',
+                        style: ThemeService.bodyStyle,
+                      ),
+                      if (_geojsonFilename != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'File: $_geojsonFilename',
+                          style: ThemeService.captionStyle.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                TextButton(
-                  onPressed: _selectGeojsonFile,
-                  child: const Text('Load'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: _selectGeojsonFile,
+                      child: const Text('Load'),
+                    ),
+                    if (_geojsonData != null)
+                      TextButton(
+                        onPressed: _removeGeojsonFile,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
+                        child: const Text('Remove'),
+                      ),
+                  ],
                 ),
               ],
             ),
